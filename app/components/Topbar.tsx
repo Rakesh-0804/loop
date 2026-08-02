@@ -1,3 +1,8 @@
+"use client";
+
+import { signOut } from "next-auth/react";
+import { LogOut } from "lucide-react";
+
 export default function Topbar() {
   return (
     <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6">
@@ -6,8 +11,12 @@ export default function Topbar() {
       </h1>
 
       <div className="flex items-center gap-4">
-        <button className="rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700">
-          New Feedback
+        <button
+          onClick={() => signOut({ callbackUrl: "/login" })}
+          className="flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-white transition hover:bg-red-700"
+        >
+          <LogOut className="h-4 w-4" />
+          Sign Out
         </button>
       </div>
     </header>
