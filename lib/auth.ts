@@ -1,9 +1,9 @@
 import NextAuth from 'next-auth';
 import Credentials from 'next-auth/providers/credentials';
 import bcrypt from 'bcryptjs';
-import { prisma } from '@/lib/db';
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
+  secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET || 'super-secret-loop-auth-key-2026',
   session: { strategy: 'jwt' },
   providers: [
     Credentials({
@@ -16,19 +16,25 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const password = credentials?.password as string;
         if (!email || !password) return null;
 
-        const user = await prisma.user.findUnique({ where: { email } });
-        if (!user) return null;
+        try {
+          const { prisma } = await import('@/lib/db');
+          const user = await prisma.user.findUnique({ where: { email } });
+          if (!user) return null;
 
-        const valid = await bcrypt.compare(password, user.passwordHash);
-        if (!valid) return null;
+          const valid = await bcrypt.compare(password, user.passwordHash);
+          if (!valid) return null;
 
-        return {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          workspaceId: user.workspaceId,
-          role: user.role,
-        };
+          return {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            workspaceId: user.workspaceId,
+            role: user.role,
+          };
+        } catch (e) {
+          console.error('Auth error:', e);
+          return null;
+        }
       },
     }),
   ],
