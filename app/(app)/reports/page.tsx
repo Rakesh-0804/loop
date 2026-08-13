@@ -1,0 +1,237 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+
+type Report = {
+  id: string;
+  title: string;
+  periodStart: string;
+  periodEnd: string;
+  generatedBy: string;
+  createdAt: string;
+  contentJson: string;
+};
+
+export default function ReportsPage() {
+  const [reports, setReports] = useState<Report[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [generating, setGenerating] = useState(false);
+  const [title, setTitle] = useState('');
+  const [showForm, setShowForm] = useState(false);
+  const [selectedReport, setSelectedReport] = useState<Report | null>(null);
+
+  useEffect(() => {
+    load();
+  }, []);
+
+  async function load() {
+    setLoading(true);
+    try {
+      const res = await fetch('/api/reports');
+      if (res.ok) {
+        const data: Report[] = await res.json();
+        setReports(data);
+        if (data.length > 0 && !selectedReport) {
+          setSelectedReport(data[0]);
+        }
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleGenerate(e: React.FormEvent) {
+    e.preventDefault();
+    if (!title.trim()) return;
+    setGenerating(true);
+
+    try {
+      const res = await fetch('/api/reports', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title }),
+      });
+
+      if (res.ok) {
+        setTitle('');
+        setShowForm(false);
+        await load();
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setGenerating(false);
+    }
+  }
+
+  return (
+    <div className="p-6 md:p-8 max-w-7xl mx-auto w-full space-y-8 animate-fadeIn">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-white/10 pb-6">
+        <div>
+          <h1 className="text-2xl md:text-3xl font-extrabold text-white tracking-tight flex items-center gap-2">
+            <span>Executive Feedback Reports</span>
+          </h1>
+          <p className="text-gray-400 text-sm mt-1">
+            Automated intelligence reports summarizing sentiment trends, top themes, and executive action items.
+          </p>
+        </div>
+        <button
+          onClick={() => setShowForm(!showForm)}
+          className="px-4 py-2.5 rounded-xl text-sm font-semibold bg-gradient-to-r from-indigo-500 to-purple-600 hover:opacity-90 text-white shadow-md shadow-indigo-500/20 transition-all cursor-pointer"
+        >
+          {showForm ? '✕ Close Form' : '✨ Generate AI Report'}
+        </button>
+      </div>
+
+      {/* Generate Report Form */}
+      {showForm && (
+        <form onSubmit={handleGenerate} className="glass-panel p-6 space-y-4 border-indigo-500/40 animate-fadeIn">
+          <h3 className="text-base font-bold text-white">Generate Executive Summary</h3>
+          <div>
+            <label className="text-xs font-semibold text-gray-400 block mb-1">Report Title</label>
+            <input
+              type="text"
+              placeholder="e.g. Q3 Monthly Customer Feedback Intelligence Report"
+              className="glass-input w-full text-sm"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+            />
+          </div>
+          <div className="flex justify-end gap-3 pt-2">
+            <button
+              type="button"
+              onClick={() => setShowForm(false)}
+              className="px-4 py-2 rounded-lg text-sm text-gray-400 hover:text-white"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={generating}
+              className="px-5 py-2 rounded-lg text-sm font-semibold bg-indigo-600 hover:bg-indigo-500 text-white shadow-md shadow-indigo-500/20 disabled:opacity-50 cursor-pointer"
+            >
+              {generating ? 'Synthesizing Report...' : 'Generate Report'}
+            </button>
+          </div>
+        </form>
+      )}
+
+      {/* Reports Split Layout */}
+      {loading ? (
+        <div className="text-center py-12 text-gray-400 text-sm">Loading executive reports...</div>
+      ) : reports.length === 0 ? (
+        <div className="glass-panel p-12 text-center text-gray-400 text-sm">
+          No reports generated yet. Click "Generate AI Report" to synthesize your first summary.
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Left Column: Report History List */}
+          <div className="space-y-3">
+            <h3 className="text-sm font-bold uppercase tracking-wider text-gray-400 px-1">Generated Reports</h3>
+            {reports.map((report) => {
+              const isSelected = selectedReport?.id === report.id;
+              return (
+                <button
+                  key={report.id}
+                  onClick={() => setSelectedReport(report)}
+                  className={`w-full text-left p-4 rounded-xl transition-all border cursor-pointer ${
+                    isSelected
+                      ? 'bg-indigo-600/20 border-indigo-500/50 shadow-md shadow-indigo-500/10'
+                      : 'glass-panel hover:border-white/20'
+                  }`}
+                >
+                  <h4 className="text-sm font-bold text-white mb-1 line-clamp-1">{report.title}</h4>
+                  <div className="flex items-center justify-between text-xs text-gray-400">
+                    <span>By {report.generatedBy}</span>
+                    <span className="font-mono">{new Date(report.createdAt).toLocaleDateString()}</span>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Right Column: Selected Report Preview */}
+          <div className="lg:col-span-2">
+            {selectedReport && (
+              <div className="glass-panel p-8 space-y-6 border-indigo-500/30">
+                <div className="border-b border-white/10 pb-6 flex items-start justify-between gap-4">
+                  <div>
+                    <h2 className="text-2xl font-extrabold text-white">{selectedReport.title}</h2>
+                    <p className="text-xs text-gray-400 mt-1">
+                      Generated by <strong className="text-indigo-300">{selectedReport.generatedBy}</strong> on{' '}
+                      {new Date(selectedReport.createdAt).toLocaleString()}
+                    </p>
+                  </div>
+                  <span className="px-3 py-1 rounded-full text-xs font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+                    Executive Document
+                  </span>
+                </div>
+
+                {(() => {
+                  try {
+                    const data = JSON.parse(selectedReport.contentJson);
+                    return (
+                      <div className="space-y-6 text-sm text-gray-200">
+                        <div>
+                          <h3 className="text-xs font-bold uppercase tracking-wider text-indigo-400 mb-2">Executive Summary</h3>
+                          <p className="p-4 rounded-xl bg-slate-900/80 border border-white/10 leading-relaxed">
+                            {data.summary}
+                          </p>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
+                            <span className="text-xs text-gray-400 block">Total Analyzed</span>
+                            <span className="text-2xl font-extrabold text-white">{data.totalAnalyzed || 0}</span>
+                          </div>
+                          <div className="p-4 rounded-xl bg-indigo-500/10 border border-indigo-500/20">
+                            <span className="text-xs text-gray-400 block">Positive Sentiment Ratio</span>
+                            <span className="text-2xl font-extrabold text-indigo-300">
+                              {((data.positiveRatio || 0) * 100).toFixed(0)}%
+                            </span>
+                          </div>
+                        </div>
+
+                        {data.topThemes && (
+                          <div>
+                            <h3 className="text-xs font-bold uppercase tracking-wider text-purple-400 mb-2">Top Theme Clusters</h3>
+                            <div className="flex flex-wrap gap-2">
+                              {data.topThemes.map((t: string, idx: number) => (
+                                <span key={idx} className="px-3 py-1 rounded-lg bg-purple-500/20 text-purple-300 border border-purple-500/30 text-xs font-semibold">
+                                  {t}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {data.keyActionItems && (
+                          <div>
+                            <h3 className="text-xs font-bold uppercase tracking-wider text-amber-400 mb-2">Recommended Action Items</h3>
+                            <ul className="space-y-2">
+                              {data.keyActionItems.map((item: string, idx: number) => (
+                                <li key={idx} className="p-3 rounded-lg bg-slate-900/90 border border-white/5 flex items-start gap-2 text-xs">
+                                  <span className="text-amber-400 font-bold">#{idx + 1}</span>
+                                  <span>{item}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  } catch (e) {
+                    return <p className="text-sm text-gray-400">{selectedReport.contentJson}</p>;
+                  }
+                })()}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
