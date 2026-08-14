@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./provider";
 import Nav from "./components/Nav";
+import FeedbackModal from "./components/FeedbackModal";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -22,6 +23,7 @@ export default function RootLayout({
         <Providers>
           <Nav />
           <main className="flex-1 flex flex-col">{children}</main>
+          <FeedbackModal />
         </Providers>
       </body>
     </html>

@@ -1,0 +1,178 @@
+'use client';
+
+import { useState } from 'react';
+
+const CHANNELS = [
+  { value: 'support_ticket', label: 'Support ticket 🎟️' },
+  { value: 'app_store', label: 'App store review ⭐️' },
+  { value: 'nps_survey', label: 'NPS survey 📈' },
+  { value: 'sales_call', label: 'Sales call note 📞' },
+  { value: 'community_post', label: 'Community post 💬' },
+];
+
+export default function FeedbackModal() {
+  const [isOpen, setIsOpen] = useState(false);
+  const [content, setContent] = useState('');
+  const [channel, setChannel] = useState('support_ticket');
+  const [customerLabel, setCustomerLabel] = useState('');
+  const [sourceRef, setSourceRef] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [error, setError] = useState('');
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError('');
+    if (!content.trim()) {
+      setError('Feedback message is required');
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const res = await fetch('/api/feedback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content, channel, customerLabel, sourceRef }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        setError(data.error || 'Failed to submit feedback');
+        return;
+      }
+
+      setSuccess(true);
+      setContent('');
+      setCustomerLabel('');
+      setSourceRef('');
+      setTimeout(() => {
+        setSuccess(false);
+        setIsOpen(false);
+      }, 1500);
+    } catch (e) {
+      setError('An error occurred while submitting feedback.');
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <>
+      {/* Floating Action Button */}
+      <button
+        onClick={() => setIsOpen(true)}
+        className="fixed bottom-6 right-6 z-50 px-4 py-3 rounded-full bg-gradient-to-r from-indigo-500 via-purple-500 to-cyan-500 hover:scale-105 text-white font-bold shadow-xl shadow-indigo-500/30 flex items-center gap-2 border border-white/20 transition-all cursor-pointer"
+        title="Submit Feedback"
+      >
+        <span className="text-lg">💬</span>
+        <span className="text-sm">Submit Feedback</span>
+      </button>
+
+      {/* Modal Dialog Backdrop */}
+      {isOpen && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 animate-fadeIn">
+          <div className="glass-panel w-full max-w-lg p-6 space-y-5 border-indigo-500/40 relative shadow-2xl">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-white/10 pb-4">
+              <div className="flex items-center gap-2">
+                <span className="text-xl">💬</span>
+                <h3 className="text-lg font-extrabold text-white">Submit Customer Feedback</h3>
+              </div>
+              <button
+                onClick={() => setIsOpen(false)}
+                className="text-gray-400 hover:text-white p-1 text-lg font-bold cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Success Toast */}
+            {success ? (
+              <div className="p-6 text-center space-y-2 animate-fadeIn">
+                <span className="text-4xl">✨</span>
+                <h4 className="text-base font-bold text-emerald-400">Feedback Submitted & AI Analyzed!</h4>
+                <p className="text-xs text-gray-300">Your feedback has been added and assigned a sentiment score.</p>
+              </div>
+            ) : (
+              /* Feedback Form */
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                  <label className="text-xs font-semibold text-gray-400 block mb-1">
+                    Feedback Content <span className="text-rose-400">*</span>
+                  </label>
+                  <textarea
+                    rows={4}
+                    className="glass-input w-full text-sm"
+                    placeholder="Enter customer review, support ticket message, or feature request..."
+                    value={content}
+                    onChange={(e) => setContent(e.target.value)}
+                    required
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-xs font-semibold text-gray-400 block mb-1">Feedback Channel</label>
+                    <select
+                      className="glass-input w-full text-sm cursor-pointer"
+                      value={channel}
+                      onChange={(e) => setChannel(e.target.value)}
+                    >
+                      {CHANNELS.map((c) => (
+                        <option key={c.value} value={c.value} className="bg-slate-900">
+                          {c.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-semibold text-gray-400 block mb-1">Customer / Account Label</label>
+                    <input
+                      type="text"
+                      className="glass-input w-full text-sm"
+                      placeholder="e.g. Acme Corp (Enterprise)"
+                      value={customerLabel}
+                      onChange={(e) => setCustomerLabel(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-xs font-semibold text-gray-400 block mb-1">Source Reference (Optional)</label>
+                  <input
+                    type="text"
+                    className="glass-input w-full text-sm"
+                    placeholder="e.g. Ticket #4082 / AppStore Review"
+                    value={sourceRef}
+                    onChange={(e) => setSourceRef(e.target.value)}
+                  />
+                </div>
+
+                {error && <p className="text-xs text-rose-400 font-medium">{error}</p>}
+
+                <div className="flex justify-end gap-3 pt-3 border-t border-white/10">
+                  <button
+                    type="button"
+                    onClick={() => setIsOpen(false)}
+                    className="px-4 py-2 rounded-lg text-sm text-gray-400 hover:text-white"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={submitting}
+                    className="px-5 py-2.5 rounded-lg text-sm font-semibold bg-gradient-to-r from-indigo-500 to-purple-600 hover:opacity-90 text-white shadow-md shadow-indigo-500/20 disabled:opacity-50 cursor-pointer flex items-center gap-2"
+                  >
+                    {submitting ? 'Submitting...' : '✨ Submit & Auto-Analyze'}
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
