@@ -20,8 +20,18 @@ export default function Nav() {
 
   const role = (session.user as any).role || 'ADMIN';
 
+  async function handleSignOut() {
+    try {
+      await signOut({ redirect: false });
+    } catch (e) {
+      console.error('Sign out error:', e);
+    } finally {
+      window.location.href = '/login';
+    }
+  }
+
   return (
-    <nav className="sticky top-0 z-50 bg-[#0f172a]/80 backdrop-blur-md border-b border-white/10 px-6 py-3 flex items-center justify-between shadow-lg">
+    <nav className="sticky top-0 z-40 bg-[#0f172a]/80 backdrop-blur-md border-b border-white/10 px-6 py-3 flex items-center justify-between shadow-lg">
       {/* Brand Logo & Nav items */}
       <div className="flex items-center gap-8">
         <Link href="/dashboard" className="flex items-center gap-2 group">
@@ -70,7 +80,7 @@ export default function Nav() {
           </div>
 
           <button
-            onClick={() => signOut({ callbackUrl: '/login' })}
+            onClick={handleSignOut}
             className="px-3 py-1.5 rounded-lg text-xs font-medium text-gray-300 bg-white/5 hover:bg-rose-500/20 hover:text-rose-300 hover:border-rose-500/40 border border-white/10 transition-all cursor-pointer"
           >
             Sign out
