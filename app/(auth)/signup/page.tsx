@@ -5,34 +5,66 @@ import { useRouter } from 'next/navigation';
 import { signIn } from 'next-auth/react';
 import Link from 'next/link';
 
+type FieldErrors = Record<string, string[]>;
+
 export default function SignupPage() {
   const router = useRouter();
-  const [form, setForm] = useState({ name: '', email: '', password: '', workspaceName: '' });
+  const [form, setForm] = useState({ name: '', email: '', password: '', confirmPassword: '', workspaceName: '' });
   const [error, setError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [loading, setLoading] = useState(false);
+
+  function updateField(field: string, value: string) {
+    setForm((prev) => ({ ...prev, [field]: value }));
+    setFieldErrors((prev) => ({ ...prev, [field]: [] }));
+  }
+
+  function passwordStrength(password: string): { score: number; label: string; color: string } {
+    let score = 0;
+    if (password.length >= 8) score++;
+    if (/[A-Z]/.test(password)) score++;
+    if (/[0-9]/.test(password)) score++;
+    if (/[^A-Za-z0-9]/.test(password)) score++;
+
+    const labels = ['Too weak', 'Weak', 'Fair', 'Good', 'Strong'];
+    const colors = ['bg-rose-500', 'bg-rose-500', 'bg-amber-500', 'bg-emerald-500', 'bg-emerald-500'];
+    return { score, label: labels[score], color: colors[score] };
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError('');
+    setFieldErrors({});
+
+    if (form.password !== form.confirmPassword) {
+      setFieldErrors({ confirmPassword: ['Passwords do not match'] });
+      return;
+    }
+
     setLoading(true);
 
     try {
       const res = await fetch('/api/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+        body: JSON.stringify({
+          name: form.name,
+          email: form.email,
+          password: form.password,
+          workspaceName: form.workspaceName,
+        }),
       });
 
       if (!res.ok) {
         const data = await res.json();
+        if (data.fieldErrors) {
+          setFieldErrors(data.fieldErrors);
+        }
         let message = 'Signup failed';
         if (typeof data.error === 'string') {
           message = data.error;
         } else if (data.error?.formErrors?.[0]) {
           message = data.error.formErrors[0];
-        } else if (data.error?.fieldErrors) {
-          const firstField = Object.values(data.error.fieldErrors)[0] as string[] | undefined;
-          if (firstField?.[0]) message = firstField[0];
         }
         setError(message);
         return;
@@ -41,15 +73,19 @@ export default function SignupPage() {
       await signIn('credentials', { email: form.email, password: form.password, redirect: false });
       router.push('/dashboard');
       router.refresh();
-    } catch (e) {
+    } catch {
       setError('An error occurred while creating your account.');
     } finally {
       setLoading(false);
     }
   }
 
+  const strength = passwordStrength(form.password);
+  const strengthSegments = [1, 2, 3, 4];
+  const confirmMatches = form.confirmPassword === '' || form.confirmPassword === form.password;
+
   return (
-    <div className="min-h-screen bg-[#0b0f19] text-white flex flex-col justify-center items-center p-6">
+    <div className="min-h-screen text-white flex flex-col justify-center items-center p-6 relative z-10">
       <div className="w-full max-w-md space-y-6">
         {/* Header */}
         <div className="text-center space-y-2">
@@ -73,9 +109,12 @@ export default function SignupPage() {
               className="glass-input w-full text-sm"
               placeholder="Alex Mercer"
               value={form.name}
-              onChange={(e) => setForm({ ...form, name: e.target.value })}
+              onChange={(e) => updateField('name', e.target.value)}
               required
             />
+            {fieldErrors.name?.map((msg) => (
+              <p key={msg} className="text-xs text-rose-400 font-medium mt-1">{msg}</p>
+            ))}
           </div>
 
           <div>
@@ -84,9 +123,12 @@ export default function SignupPage() {
               className="glass-input w-full text-sm"
               placeholder="Acme Corp"
               value={form.workspaceName}
-              onChange={(e) => setForm({ ...form, workspaceName: e.target.value })}
+              onChange={(e) => updateField('workspaceName', e.target.value)}
               required
             />
+            {fieldErrors.workspaceName?.map((msg) => (
+              <p key={msg} className="text-xs text-rose-400 font-medium mt-1">{msg}</p>
+            ))}
           </div>
 
           <div>
@@ -96,21 +138,65 @@ export default function SignupPage() {
               placeholder="alex@company.com"
               type="email"
               value={form.email}
-              onChange={(e) => setForm({ ...form, email: e.target.value })}
+              onChange={(e) => updateField('email', e.target.value)}
               required
             />
+            {fieldErrors.email?.map((msg) => (
+              <p key={msg} className="text-xs text-rose-400 font-medium mt-1">{msg}</p>
+            ))}
           </div>
 
           <div>
             <label className="text-xs font-semibold text-gray-400 block mb-1">Password</label>
             <input
               className="glass-input w-full text-sm"
-              placeholder="Minimum 6 characters"
+              placeholder="Minimum 8 characters"
               type="password"
               value={form.password}
-              onChange={(e) => setForm({ ...form, password: e.target.value })}
+              onChange={(e) => updateField('password', e.target.value)}
               required
             />
+            {form.password && (
+              <div className="mt-2">
+                <div className="flex gap-1.5">
+                  {strengthSegments.map((seg) => (
+                    <div
+                      key={seg}
+                      className={`h-1.5 flex-1 rounded-full transition-all ${
+                        strength.score >= seg ? strength.color : 'bg-white/10'
+                      }`}
+                    ></div>
+                  ))}
+                </div>
+                <span className="text-[10px] text-gray-400 mt-1 inline-block">
+                  Strength: <span className={`font-semibold ${strength.score >= 3 ? 'text-emerald-400' : strength.score >= 2 ? 'text-amber-400' : 'text-rose-400'}`}>{strength.label}</span>
+                </span>
+              </div>
+            )}
+            <p className="text-[10px] text-gray-500 mt-1">
+              Use at least 8 characters with one uppercase letter and one number.
+            </p>
+            {fieldErrors.password?.map((msg) => (
+              <p key={msg} className="text-xs text-rose-400 font-medium mt-1">{msg}</p>
+            ))}
+          </div>
+
+          <div>
+            <label className="text-xs font-semibold text-gray-400 block mb-1">Confirm Password</label>
+            <input
+              className={`glass-input w-full text-sm ${form.confirmPassword && !confirmMatches ? 'border-rose-500/50' : ''}`}
+              placeholder="Re-enter your password"
+              type="password"
+              value={form.confirmPassword}
+              onChange={(e) => updateField('confirmPassword', e.target.value)}
+              required
+            />
+            {fieldErrors.confirmPassword?.map((msg) => (
+              <p key={msg} className="text-xs text-rose-400 font-medium mt-1">{msg}</p>
+            ))}
+            {form.confirmPassword && !confirmMatches && (
+              <p className="text-xs text-rose-400 font-medium mt-1">Passwords do not match</p>
+            )}
           </div>
 
           {error && (

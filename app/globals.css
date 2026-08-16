@@ -117,3 +117,61 @@
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(99, 102, 241, 0.7);
 }
+
+/* Print Styles - Executive Report PDF Export */
+@media print {
+  nav,
+  header,
+  footer,
+  button,
+  .print-hide {
+    display: none !important;
+  }
+
+  body {
+    background: #ffffff !important;
+    color: #111827 !important;
+    background-image: none !important;
+  }
+
+  .print-area {
+    background: #ffffff !important;
+    color: #111827 !important;
+    border: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    max-width: 100% !important;
+  }
+
+  .print-header h2 {
+    color: #111827 !important;
+  }
+
+  .print-header p {
+    color: #4b5563 !important;
+  }
+
+  .print-area h3 {
+    color: #4f46e5 !important;
+  }
+
+  .print-area p {
+    color: #374151 !important;
+  }
+
+  .print-area .bg-slate-900,
+  .print-area .bg-slate-900\/80,
+  .print-area .bg-slate-900\/90 {
+    background: #f3f4f6 !important;
+    border-color: #e5e7eb !important;
+    color: #374151 !important;
+  }
+
+  @page {
+    margin: 2cm;
+  }
+}

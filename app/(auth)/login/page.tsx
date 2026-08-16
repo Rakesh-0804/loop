@@ -24,7 +24,7 @@ export default function LoginPage() {
       }
       router.push('/dashboard');
       router.refresh();
-    } catch (e) {
+    } catch {
       setError('An unexpected error occurred.');
     } finally {
       setLoading(false);
@@ -36,7 +36,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0b0f19] text-white flex flex-col justify-center items-center p-6">
+    <div className="min-h-screen text-white flex flex-col justify-center items-center p-6 relative z-10">
       <div className="w-full max-w-md space-y-6">
         {/* Brand Header */}
         <div className="text-center space-y-2">
@@ -119,7 +119,7 @@ export default function LoginPage() {
         </form>
 
         <p className="text-center text-xs text-gray-400">
-          Don't have an account?{' '}
+          Don&apos;t have an account?{' '}
           <Link href="/signup" className="text-indigo-400 font-semibold hover:underline">
             Create workspace
           </Link>

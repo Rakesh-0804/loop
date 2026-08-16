@@ -2,7 +2,15 @@ import NextAuth from 'next-auth';
 import Credentials from 'next-auth/providers/credentials';
 import bcrypt from 'bcryptjs';
 
-const DEMO_USERS: Record<string, { id: string; name: string; email: string; role: 'ADMIN' | 'ANALYST' | 'VIEWER'; workspaceId: string }> = {
+type AuthUser = {
+  id: string;
+  name: string;
+  email: string;
+  role: 'ADMIN' | 'ANALYST' | 'VIEWER';
+  workspaceId: string;
+};
+
+const DEMO_USERS: Record<string, AuthUser> = {
   'admin@projectloop.ai': {
     id: 'demo-admin-id',
     name: 'Alex Mercer (Admin)',
@@ -73,15 +81,19 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        token.workspaceId = (user as any).workspaceId;
-        token.role = (user as any).role;
+        const authUser = user as AuthUser;
+        token.userId = authUser.id;
+        token.workspaceId = authUser.workspaceId;
+        token.role = authUser.role;
       }
       return token;
     },
     async session({ session, token }) {
       if (session.user) {
-        (session.user as any).workspaceId = token.workspaceId || 'demo-workspace-id';
-        (session.user as any).role = token.role || 'ADMIN';
+        const sessionUser = session.user as { id?: string; userId?: string; workspaceId?: string; role?: string };
+        sessionUser.userId = (token.userId as string) || sessionUser.id || undefined;
+        sessionUser.workspaceId = (token.workspaceId as string) || 'demo-workspace-id';
+        sessionUser.role = (token.role as string) || 'ADMIN';
       }
       return session;
     },
