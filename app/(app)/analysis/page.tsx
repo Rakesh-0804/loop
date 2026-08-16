@@ -211,7 +211,7 @@ export default function AnalysisPage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-white/10 pb-6">
         <div>
           <h1 className="text-2xl md:text-3xl font-extrabold text-white tracking-tight flex items-center gap-2">
-            <span>📈 Deep AI Analysis Hub</span>
+            <span>📈 Deep AI Analytics Hub</span>
           </h1>
           <p className="text-gray-400 text-sm mt-1">
             Net sentiment intelligence, keyword drivers, theme distribution, and critical risk flags.

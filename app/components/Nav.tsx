@@ -32,7 +32,7 @@ export default function Nav() {
   const links = [
     { href: '/dashboard', label: 'Dashboard', icon: '📊' },
     { href: '/inbox', label: 'Inbox', icon: '📥' },
-    { href: '/analysis', label: 'Analysis', icon: '📈' },
+    { href: '/analysis', label: 'Analytics', icon: '📈' },
     { href: '/themes', label: 'Themes', icon: '🏷️' },
     { href: '/reports', label: 'Reports', icon: '📄' },
     { href: '/settings/members', label: 'Members', icon: '👥' },
