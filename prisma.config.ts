@@ -8,6 +8,6 @@ export default defineConfig({
     seed: "npx tsx prisma/seed.ts",
   },
   datasource: {
-    url: process.env["DATABASE_URL"] || "file:./dev.db",
+    url: process.env["DATABASE_URL"] || process.env["POSTGRES_URL"] || "postgresql://postgres:postgres@localhost:5432/loop_db?schema=public",
   },
 });
