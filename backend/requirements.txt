@@ -1,0 +1,8 @@
+flask>=3.0.0
+flask-cors>=4.0.0
+flask-sqlalchemy>=3.1.0
+psycopg2-binary>=2.9.9
+google-genai>=2.3.0
+python-dotenv>=1.0.0
+transformers>=4.40.0
+torch>=2.0.0
