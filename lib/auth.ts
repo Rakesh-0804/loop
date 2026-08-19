@@ -10,30 +10,6 @@ type AuthUser = {
   workspaceId: string;
 };
 
-const DEMO_USERS: Record<string, AuthUser> = {
-  'admin@projectloop.ai': {
-    id: 'demo-admin-id',
-    name: 'Alex Mercer (Admin)',
-    email: 'admin@projectloop.ai',
-    role: 'ADMIN',
-    workspaceId: 'demo-workspace-id',
-  },
-  'analyst@projectloop.ai': {
-    id: 'demo-analyst-id',
-    name: 'Sarah Chen (Analyst)',
-    email: 'analyst@projectloop.ai',
-    role: 'ANALYST',
-    workspaceId: 'demo-workspace-id',
-  },
-  'viewer@projectloop.ai': {
-    id: 'demo-viewer-id',
-    name: 'David Miller (Viewer)',
-    email: 'viewer@projectloop.ai',
-    role: 'VIEWER',
-    workspaceId: 'demo-workspace-id',
-  },
-};
-
 export const { handlers, auth, signIn, signOut } = NextAuth({
   secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET || 'super-secret-loop-auth-key-2026',
   trustHost: true,
@@ -49,7 +25,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const password = credentials?.password as string;
         if (!email || !password) return null;
 
-        // Try Prisma DB lookup
         try {
           const { prisma } = await import('@/lib/db');
           const user = await prisma.user.findUnique({ where: { email } });
@@ -66,12 +41,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             }
           }
         } catch (e) {
-          console.error('Prisma auth error, attempting demo fallback:', e);
-        }
-
-        // Demo Fallback for Vercel Serverless environment
-        if (DEMO_USERS[email] && password === 'password123') {
-          return DEMO_USERS[email];
+          console.error('Prisma auth error:', e);
         }
 
         return null;
@@ -91,8 +61,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     async session({ session, token }) {
       if (session.user) {
         const sessionUser = session.user as { id?: string; userId?: string; workspaceId?: string; role?: string };
-        sessionUser.userId = (token.userId as string) || sessionUser.id || undefined;
-        sessionUser.workspaceId = (token.workspaceId as string) || 'demo-workspace-id';
+        sessionUser.userId = (token.userId as string) || sessionUser.id;
+        sessionUser.workspaceId = token.workspaceId as string;
         sessionUser.role = (token.role as string) || 'ADMIN';
       }
       return session;

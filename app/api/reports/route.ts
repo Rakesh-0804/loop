@@ -14,44 +14,20 @@ export async function GET() {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const workspaceId = (session.user as any).workspaceId || 'demo-workspace-id';
+  const sessionUser = session.user as { workspaceId?: string; role?: string };
+  const workspaceId = sessionUser.workspaceId;
 
   try {
     const reports = await prisma.report.findMany({
-      where: { workspaceId },
+      where: workspaceId ? { workspaceId } : {},
       orderBy: { createdAt: 'desc' },
     });
 
-    if (reports.length > 0) {
-      return NextResponse.json(reports);
-    }
+    return NextResponse.json(reports);
   } catch (e) {
     console.error('Reports GET error:', e);
+    return NextResponse.json([]);
   }
-
-  const demoReport = [
-    {
-      id: 'demo-rep-1',
-      title: 'Q3 Executive Feedback Intelligence Summary',
-      periodStart: new Date('2026-07-01').toISOString(),
-      periodEnd: new Date('2026-08-31').toISOString(),
-      generatedBy: session.user.name || 'Alex Mercer (Admin)',
-      createdAt: new Date().toISOString(),
-      contentJson: JSON.stringify({
-        summary: 'Customer sentiment improved by +18% following performance optimizations in the core dashboard. Top feature request remains PDF export automation.',
-        topThemes: ['Performance & Speed', 'Feature Requests', 'Integrations & Webhooks'],
-        totalAnalyzed: 142,
-        positiveRatio: 0.72,
-        keyActionItems: [
-          'Prioritize PDF Export feature for Q4 roadmap.',
-          'Optimize CSV export streaming for dataset queries > 10,000 rows.',
-          'Fix mobile navigation overflow bug on iOS viewports.',
-        ],
-      }),
-    },
-  ];
-
-  return NextResponse.json(demoReport);
 }
 
 export async function POST(req: Request) {
@@ -60,12 +36,17 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const role = (session.user as any).role;
+  const sessionUser = session.user as { workspaceId?: string; role?: string };
+  const role = sessionUser.role;
   if (role === 'VIEWER') {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
-  const workspaceId = (session.user as any).workspaceId || 'demo-workspace-id';
+  const workspaceId = sessionUser.workspaceId;
+  if (!workspaceId) {
+    return NextResponse.json({ error: 'Workspace ID required' }, { status: 400 });
+  }
+
   const userName = session.user.name || session.user.email || 'Admin';
 
   const body = await req.json();
@@ -81,7 +62,7 @@ export async function POST(req: Request) {
     feedbacks = await prisma.feedback.findMany({ where: { workspaceId } });
     themes = await prisma.theme.findMany({ where: { workspaceId } });
   } catch (e) {
-    console.error('Database query fallback during report generation:', e);
+    console.error('Database query error during report generation:', e);
   }
 
   // Synthesize report using Gemini 3.6 Flash
@@ -100,15 +81,7 @@ export async function POST(req: Request) {
     });
     return NextResponse.json(report);
   } catch (e) {
-    console.error('Prisma report save error, returning synthetic report:', e);
-    return NextResponse.json({
-      id: 'rep-' + Date.now(),
-      title: parsed.data.title,
-      periodStart: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
-      periodEnd: new Date().toISOString(),
-      generatedBy: userName,
-      createdAt: new Date().toISOString(),
-      contentJson: JSON.stringify(reportContent),
-    });
+    console.error('Prisma report save error:', e);
+    return NextResponse.json({ error: 'Failed to create executive report' }, { status: 500 });
   }
 }

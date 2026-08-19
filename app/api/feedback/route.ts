@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import { z } from 'zod';
-import { DEMO_FEEDBACKS } from '@/lib/demo-data';
 
 const feedbackSchema = z.object({
   content: z.string().min(1),
@@ -18,11 +17,11 @@ export async function GET() {
   }
 
   const sessionUser = session.user as { workspaceId?: string; role?: string };
-  const workspaceId = sessionUser.workspaceId || 'demo-workspace-id';
+  const workspaceId = sessionUser.workspaceId;
 
   try {
     const feedback = await prisma.feedback.findMany({
-      where: { workspaceId },
+      where: workspaceId ? { workspaceId } : {},
       include: {
         themes: {
           include: {
@@ -33,14 +32,11 @@ export async function GET() {
       orderBy: { createdAt: 'desc' },
     });
 
-    if (feedback.length > 0) {
-      return NextResponse.json(feedback);
-    }
+    return NextResponse.json(feedback);
   } catch (e) {
-    console.error('Feedback fetch error, returning demo fallback data:', e);
+    console.error('Feedback fetch error:', e);
+    return NextResponse.json([]);
   }
-
-  return NextResponse.json(DEMO_FEEDBACKS);
 }
 
 export async function POST(req: Request) {
@@ -55,7 +51,11 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
-  const workspaceId = sessionUser.workspaceId || 'demo-workspace-id';
+  const workspaceId = sessionUser.workspaceId;
+  if (!workspaceId) {
+    return NextResponse.json({ error: 'Workspace ID required' }, { status: 400 });
+  }
+
   const body = await req.json();
   const parsed = feedbackSchema.safeParse(body);
   if (!parsed.success) {
@@ -93,20 +93,8 @@ export async function POST(req: Request) {
     });
     return NextResponse.json(feedback);
   } catch (e) {
-    console.error('Prisma create error, returning simulated item:', e);
-    const newItem = {
-      id: 'fb-' + Date.now(),
-      content: parsed.data.content,
-      channel: parsed.data.channel,
-      sourceRef: parsed.data.sourceRef || 'Web Input',
-      customerLabel: parsed.data.customerLabel || 'User Submission',
-      sentiment,
-      sentimentScore,
-      status: 'NEW',
-      createdAt: new Date().toISOString(),
-      themes: [],
-    };
-    return NextResponse.json(newItem);
+    console.error('Prisma create error:', e);
+    return NextResponse.json({ error: 'Failed to create feedback record' }, { status: 500 });
   }
 }
 
@@ -122,7 +110,7 @@ export async function PATCH(req: Request) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
-  const workspaceId = sessionUser.workspaceId || 'demo-workspace-id';
+  const workspaceId = sessionUser.workspaceId;
   const body = await req.json();
 
   if (!body.id) {
@@ -131,7 +119,7 @@ export async function PATCH(req: Request) {
 
   try {
     const existing = await prisma.feedback.findFirst({
-      where: { id: body.id, workspaceId },
+      where: workspaceId ? { id: body.id, workspaceId } : { id: body.id },
     });
 
     if (existing) {
@@ -150,8 +138,8 @@ export async function PATCH(req: Request) {
       return NextResponse.json(updated);
     }
   } catch (e) {
-    console.error('PATCH error, returning mock updated object:', e);
+    console.error('PATCH error:', e);
   }
 
-  return NextResponse.json({ id: body.id, status: body.status, sentiment: body.sentiment });
+  return NextResponse.json({ error: 'Feedback record not found' }, { status: 404 });
 }

@@ -44,7 +44,7 @@ class FeedbackModel(db.Model):
     sentimentScore = db.Column(db.Float, nullable=True)
     status = db.Column(db.String, default='NEW')
     createdAt = db.Column(db.DateTime, default=datetime.utcnow)
-    workspaceId = db.Column(db.String, default='demo-workspace-id')
+    workspaceId = db.Column(db.String, nullable=True)
 
     def to_dict(self):
         s_map = {"POS": "POSITIVE", "NEG": "NEGATIVE", "NEU": "NEUTRAL"}
@@ -71,7 +71,7 @@ class UserModel(db.Model):
     email = db.Column(db.String, unique=True, nullable=False)
     passwordHash = db.Column(db.String, nullable=False)
     role = db.Column(db.String, default='ADMIN')
-    workspaceId = db.Column(db.String, default='demo-workspace-id')
+    workspaceId = db.Column(db.String, nullable=False)
 
 class ReportModel(db.Model):
     __tablename__ = 'Report'
@@ -81,7 +81,7 @@ class ReportModel(db.Model):
     periodEnd = db.Column(db.DateTime, default=datetime.utcnow)
     contentJson = db.Column(db.Text, nullable=False)
     createdAt = db.Column(db.DateTime, default=datetime.utcnow)
-    workspaceId = db.Column(db.String, default='demo-workspace-id')
+    workspaceId = db.Column(db.String, nullable=False)
     generatedBy = db.Column(db.String, default='Admin')
 
 # Sentiment Analysis Engine (Gemini 3.6 Flash + Fallback)
@@ -170,7 +170,7 @@ def submit_feedback():
         sentiment=sentiment_code,
         sentimentScore=score,
         status="NEW",
-        workspaceId=data.get("workspaceId", "demo-workspace-id")
+        workspaceId=data.get("workspaceId")
     )
 
     try:
@@ -218,7 +218,7 @@ def analytics():
                 neutral += 1
         total = len(items)
     except Exception:
-        total, positive, negative, neutral = 37, 24, 8, 5
+        total, positive, negative, neutral = 0, 0, 0, 0
 
     return jsonify({
         "total_feedbacks": total,
@@ -260,12 +260,12 @@ def generate_report():
 
     total_count = len(feedbacks_data)
     pos_count = sum(1 for f in feedbacks_data if f.get("sentiment") in ["POS", "POSITIVE"])
-    positive_ratio = (pos_count / total_count) if total_count > 0 else 0.7
+    positive_ratio = (pos_count / total_count) if total_count > 0 else 0.0
 
-    summary = f"Executive Customer Feedback Summary: {total_count} feedback records analyzed. Customer satisfaction score stands at {round(positive_ratio * 100, 1)}%."
+    summary = f"Executive Customer Feedback Summary: {total_count} feedback records analyzed. Overall positive sentiment ratio stands at {round(positive_ratio * 100, 1)}%."
     top_themes = ["Performance & Speed", "UI/UX Usability", "Feature Requests"]
-    critical_issues = ["Intermittent invoice generation delay on high concurrency", "Mobile dropdown overflow on smaller viewports"]
-    recommendations = ["Prioritize automated PDF report export", "Optimize query caching for high volume inbox search"]
+    critical_issues = ["Intermittent feedback submission delays", "Mobile viewport dropdown alignment"]
+    recommendations = ["Prioritize automated report generation", "Optimize query caching"]
 
     if gemini_client and total_count > 0:
         try:
