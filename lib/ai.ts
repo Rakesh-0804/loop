@@ -35,21 +35,27 @@ export interface AIReportResult {
 }
 
 /**
- * Real AI Sentiment & Theme Classifier using Gemini 3.6 Flash
+ * Decisive AI Sentiment & Theme Classifier using Gemini 3.6 Flash
  */
 export async function analyzeFeedbackAI(content: string, availableThemes: string[] = []): Promise<AIAnalysisResult> {
   if (aiClient) {
     try {
-      const prompt = `You are an expert customer feedback intelligence AI. Analyze the following customer feedback text.
-      
-Feedback Text: "${content}"
+      const prompt = `You are a highly decisive customer feedback sentiment intelligence AI. Analyze this customer feedback text:
+"${content}"
+
 Available Themes: ${JSON.stringify(availableThemes)}
 
-Return ONLY a valid JSON object matching this exact schema:
+CRITICAL CLASSIFICATION INSTRUCTIONS:
+- DO NOT default to neutral ("NEU"). Be decisive.
+- Classify as "POS" if the feedback expresses praise, satisfaction, feature appreciation, speed, good design, enthusiasm, or general approval.
+- Classify as "NEG" if the feedback contains any complaint, feature request, frustration, slow speed, delay, billing issue, bug, crash, unhelpfulness, or disappointment.
+- Assign "NEU" ONLY if the text is 100% strictly neutral facts with zero positive or negative polarity.
+
+Return ONLY a valid JSON object matching this schema:
 {
   "sentiment": "POS" | "NEU" | "NEG",
-  "sentimentScore": float between 0.0 and 1.0,
-  "themes": string[] (up to 3 matching theme names from Available Themes or new relevant categories)
+  "sentimentScore": float (POS: 0.70 to 0.98, NEG: 0.05 to 0.35, NEU: 0.50),
+  "themes": string[] (up to 3 matching theme names)
 }`;
 
       const response = await aiClient.interactions.create({
@@ -61,9 +67,14 @@ Return ONLY a valid JSON object matching this exact schema:
       const cleanJson = outputText.replace(/```json/g, '').replace(/```/g, '').trim();
       const parsed = JSON.parse(cleanJson);
 
+      let sentiment: 'POS' | 'NEU' | 'NEG' = 'POS';
+      if (parsed.sentiment === 'NEG' || parsed.sentiment === 'NEGATIVE') sentiment = 'NEG';
+      else if (parsed.sentiment === 'NEU' || parsed.sentiment === 'NEUTRAL') sentiment = 'NEU';
+      else if (parsed.sentiment === 'POS' || parsed.sentiment === 'POSITIVE') sentiment = 'POS';
+
       return {
-        sentiment: parsed.sentiment || 'NEU',
-        sentimentScore: typeof parsed.sentimentScore === 'number' ? parsed.sentimentScore : 0.7,
+        sentiment,
+        sentimentScore: typeof parsed.sentimentScore === 'number' ? parsed.sentimentScore : (sentiment === 'POS' ? 0.90 : sentiment === 'NEG' ? 0.15 : 0.50),
         themes: Array.isArray(parsed.themes) ? parsed.themes : ['General Usability'],
       };
     } catch (e) {
@@ -71,13 +82,22 @@ Return ONLY a valid JSON object matching this exact schema:
     }
   }
 
-  // Fallback NLP Engine
+  // Enhanced Decisive Local Sentiment Engine
   const text = content.toLowerCase();
-  let sentiment: 'POS' | 'NEU' | 'NEG' = 'NEU';
-  let sentimentScore = 0.5;
 
-  const posKeywords = ['love', 'great', 'fast', 'crisp', 'saved', 'improved', 'seamless', 'awesome', 'excellent', 'useful', 'happy', 'helped', 'best'];
-  const negKeywords = ['slow', 'bug', 'failed', 'confusing', 'incorrect', 'issue', 'problem', 'delay', 'took', 'broken', 'error', 'hate', 'bad', 'disaster', 'worst', 'terrible', 'canceling', 'unacceptable'];
+  const posKeywords = [
+    'love', 'great', 'fast', 'crisp', 'saved', 'improved', 'seamless', 'awesome', 'excellent',
+    'useful', 'happy', 'helped', 'best', 'good', 'nice', 'clean', 'intuitive', 'satisfied',
+    'thanks', 'thank', 'perfect', 'gorgeous', 'game-changer', 'impressed', 'recommend', 'smooth'
+  ];
+
+  const negKeywords = [
+    'slow', 'bug', 'failed', 'fail', 'confusing', 'incorrect', 'issue', 'problem', 'delay', 'took',
+    'broken', 'error', 'hate', 'bad', 'disaster', 'worst', 'terrible', 'canceling', 'cancel', 'unacceptable',
+    'frustrating', 'frustrated', 'horrible', 'outage', 'freeze', 'crash', 'refund', 'unhelpful', 'unusable',
+    'lacking', 'lack', 'need', 'pain', 'painful', 'locked', 'wrong', 'poor', 'disappointing', 'disappointed',
+    'nightmare', 'unreadable', 'cut off', 'stale', 'double-charged'
+  ];
 
   let posMatch = 0;
   let negMatch = 0;
@@ -85,20 +105,32 @@ Return ONLY a valid JSON object matching this exact schema:
   posKeywords.forEach((kw) => { if (text.includes(kw)) posMatch++; });
   negKeywords.forEach((kw) => { if (text.includes(kw)) negMatch++; });
 
-  if (posMatch > negMatch) {
-    sentiment = 'POS';
-    sentimentScore = Math.min(0.98, 0.7 + posMatch * 0.1);
-  } else if (negMatch > posMatch) {
+  let sentiment: 'POS' | 'NEU' | 'NEG' = 'POS';
+  let sentimentScore = 0.85;
+
+  if (negMatch > 0 && negMatch >= posMatch) {
     sentiment = 'NEG';
-    sentimentScore = Math.max(0.05, 0.3 - negMatch * 0.1);
+    sentimentScore = Math.max(0.05, 0.35 - negMatch * 0.08);
+  } else if (posMatch > negMatch) {
+    sentiment = 'POS';
+    sentimentScore = Math.min(0.98, 0.70 + posMatch * 0.08);
+  } else {
+    // If no strong positive words, check for complaints or requests
+    if (text.includes('need') || text.includes('request') || text.includes('want') || text.includes('missing') || text.includes('add')) {
+      sentiment = 'NEG';
+      sentimentScore = 0.30;
+    } else {
+      sentiment = 'POS';
+      sentimentScore = 0.80;
+    }
   }
 
   const themes: string[] = [];
   if (text.includes('load') || text.includes('speed') || text.includes('performance') || text.includes('fast') || text.includes('slow')) themes.push('Performance & Speed');
   if (text.includes('ui') || text.includes('ux') || text.includes('layout') || text.includes('mobile') || text.includes('design')) themes.push('UI/UX Usability');
-  if (text.includes('bill') || text.includes('tax') || text.includes('price') || text.includes('invoice')) themes.push('Billing & Subscriptions');
+  if (text.includes('bill') || text.includes('tax') || text.includes('price') || text.includes('invoice') || text.includes('charge')) themes.push('Billing & Subscriptions');
   if (text.includes('slack') || text.includes('webhook') || text.includes('integration') || text.includes('api')) themes.push('Integrations & Webhooks');
-  if (text.includes('pdf') || text.includes('export') || text.includes('feature') || text.includes('add')) themes.push('Feature Requests');
+  if (text.includes('pdf') || text.includes('export') || text.includes('feature') || text.includes('add') || text.includes('report')) themes.push('Feature Requests');
   if (themes.length === 0) themes.push('Customer Usability');
 
   return { sentiment, sentimentScore, themes };

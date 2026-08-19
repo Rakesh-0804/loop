@@ -48,7 +48,7 @@ class FeedbackModel(db.Model):
 
     def to_dict(self):
         s_map = {"POS": "POSITIVE", "NEG": "NEGATIVE", "NEU": "NEUTRAL"}
-        s_label = s_map.get(self.sentiment, "NEUTRAL")
+        s_label = s_map.get(self.sentiment, "POSITIVE")
         return {
             "id": self.id,
             "feedback": self.content,
@@ -57,8 +57,8 @@ class FeedbackModel(db.Model):
             "sourceRef": self.sourceRef,
             "customerLabel": self.customerLabel,
             "sentiment": s_label,
-            "score": round(self.sentimentScore or 0.5, 4),
-            "sentimentScore": self.sentimentScore or 0.5,
+            "score": round(self.sentimentScore or 0.8, 4),
+            "sentimentScore": self.sentimentScore or 0.8,
             "status": self.status,
             "timestamp": self.createdAt.isoformat() if self.createdAt else str(datetime.utcnow()),
             "createdAt": self.createdAt.isoformat() if self.createdAt else str(datetime.utcnow())
@@ -84,17 +84,23 @@ class ReportModel(db.Model):
     workspaceId = db.Column(db.String, nullable=False)
     generatedBy = db.Column(db.String, default='Admin')
 
-# Sentiment Analysis Engine (Gemini 3.6 Flash + Fallback)
+# Decisive Sentiment Analysis Engine (Gemini 3.6 Flash + Decisive Fallback)
 def analyze_sentiment_ai(text):
     if gemini_client:
         try:
-            prompt = f"""You are an expert customer feedback intelligence AI.
-Analyze this feedback: "{text}"
+            prompt = f"""You are a decisive customer feedback sentiment AI. Analyze this customer text:
+"{text}"
+
+CRITICAL CLASSIFICATION RULE:
+- DO NOT default to neutral ("NEUTRAL"). Be highly decisive.
+- Classify as "POSITIVE" if the feedback contains praise, satisfaction, speed, good UI, helpfulness, or enthusiasm.
+- Classify as "NEGATIVE" if the feedback contains complaints, requests for missing features, delay, slow speed, billing errors, bugs, or frustration.
+- Assign "NEUTRAL" ONLY if the text is 100% strictly neutral fact with zero opinion or emotion.
 
 Return ONLY a valid JSON object matching this schema:
 {{
   "sentiment": "POSITIVE" | "NEUTRAL" | "NEGATIVE",
-  "score": float between 0.0 and 1.0
+  "score": float (POSITIVE: 0.70-0.98, NEGATIVE: 0.05-0.35, NEUTRAL: 0.50)
 }}"""
             response = gemini_client.interactions.create(
                 model="gemini-3.6-flash",
@@ -103,25 +109,28 @@ Return ONLY a valid JSON object matching this schema:
             clean_json = re.sub(r'```json|```', '', response.output_text or '').strip()
             parsed = json.loads(clean_json)
             s_map = {"POSITIVE": "POS", "NEGATIVE": "NEG", "NEUTRAL": "NEU"}
-            raw_s = parsed.get("sentiment", "NEUTRAL").upper()
-            return s_map.get(raw_s, "NEU"), float(parsed.get("score", 0.7)), raw_s
+            raw_s = parsed.get("sentiment", "POSITIVE").upper()
+            return s_map.get(raw_s, "POS"), float(parsed.get("score", 0.85)), raw_s
         except Exception as e:
-            print(f"Gemini AI error, using fallback: {e}")
+            print(f"Gemini AI error, using decisive fallback: {e}")
 
-    # Fallback Rule Engine
+    # Decisive Fallback Rule Engine
     lower = text.lower()
-    pos_words = ['good', 'great', 'love', 'fast', 'amazing', 'excellent', 'useful', 'happy', 'best', 'awesome', 'improved', 'crisp']
-    neg_words = ['slow', 'bad', 'hate', 'delay', 'issue', 'problem', 'bug', 'failed', 'broken', 'worst', 'error', 'poor']
-    
+    pos_words = ['good', 'great', 'love', 'fast', 'amazing', 'excellent', 'useful', 'happy', 'best', 'awesome', 'improved', 'crisp', 'nice', 'clean', 'intuitive', 'thanks', 'thank', 'perfect', 'gorgeous', 'game-changer', 'impressed', 'recommend', 'smooth']
+    neg_words = ['slow', 'bad', 'hate', 'delay', 'issue', 'problem', 'bug', 'failed', 'fail', 'broken', 'worst', 'error', 'poor', 'disaster', 'terrible', 'canceling', 'cancel', 'unacceptable', 'frustrating', 'frustrated', 'horrible', 'outage', 'freeze', 'crash', 'refund', 'unhelpful', 'unusable', 'lacking', 'lack', 'need', 'pain', 'painful', 'locked', 'wrong', 'disappointing', 'disappointed', 'nightmare', 'unreadable', 'cut off', 'stale']
+
     pos_count = sum(1 for w in pos_words if w in lower)
     neg_count = sum(1 for w in neg_words if w in lower)
 
-    if pos_count > neg_count:
-        return "POS", min(0.98, round(0.7 + pos_count * 0.1, 4)), "POSITIVE"
-    elif neg_count > pos_count:
-        return "NEG", max(0.05, round(0.3 - neg_count * 0.1, 4)), "NEGATIVE"
+    if neg_count > 0 and neg_count >= pos_count:
+        return "NEG", max(0.05, round(0.35 - neg_count * 0.08, 4)), "NEGATIVE"
+    elif pos_count > neg_count:
+        return "POS", min(0.98, round(0.70 + pos_count * 0.08, 4)), "POSITIVE"
     else:
-        return "NEU", 0.5, "NEUTRAL"
+        if any(w in lower for w in ['need', 'request', 'want', 'missing', 'add', 'would be']):
+            return "NEG", 0.30, "NEGATIVE"
+        else:
+            return "POS", 0.80, "POSITIVE"
 
 # Flask Routes
 @app.route("/", methods=["GET"])
@@ -278,7 +287,7 @@ Sample Data: {[f['feedback'] for f in feedbacks_data[:10]]}
 
 Return ONLY a valid JSON object matching this schema:
 {{
-  "summary": "2-3 sentence executive synthesis paragraph",
+  "summary": "3-4 sentence executive synthesis paragraph",
   "top_themes": ["string array of top 3 recurring theme names"],
   "critical_issues": ["string array of critical user pain points"],
   "recommendations": ["string array of 3 prioritized strategic recommendations"]
