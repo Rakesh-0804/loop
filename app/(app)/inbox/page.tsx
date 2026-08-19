@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import CSVUploadModal from '@/app/components/CSVUploadModal';
 
 type FeedbackTheme = {
   theme: {
@@ -47,6 +48,7 @@ export default function InboxPage() {
   const [loading, setLoading] = useState(true);
   const [analyzing, setAnalyzing] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [showCSVModal, setShowCSVModal] = useState(false);
 
   useEffect(() => {
     load();
@@ -142,7 +144,16 @@ export default function InboxPage() {
             Centralized hub for managing customer reviews, support notes, NPS surveys, and auto-extracted themes.
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
+          <button
+            onClick={() => setShowCSVModal(true)}
+            className="px-4 py-2.5 rounded-xl text-sm font-semibold bg-slate-800 hover:bg-slate-700 text-white border border-white/10 shadow-md transition-all flex items-center gap-2 cursor-pointer"
+          >
+            <svg className="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+            </svg>
+            <span>Upload CSV</span>
+          </button>
           <button
             onClick={handleAutoAnalyze}
             disabled={analyzing}
@@ -424,6 +435,14 @@ export default function InboxPage() {
           ))}
         </div>
       )}
+
+      <CSVUploadModal
+        isOpen={showCSVModal}
+        onClose={() => setShowCSVModal(false)}
+        onSuccess={() => {
+          load();
+        }}
+      />
     </div>
   );
 }

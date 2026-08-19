@@ -192,9 +192,59 @@ def submit_feedback():
     res_dict = record.to_dict()
     res_dict["sentiment"] = label
 
+@app.route("/bulk-upload-csv", methods=["POST"])
+def bulk_upload_csv():
+    data = request.get_json() or {}
+    items = data.get("items", [])
+
+    if not isinstance(items, list) or len(items) == 0:
+        return jsonify({"error": "Items array cannot be empty"}), 400
+
+    created_records = []
+    pos_count = 0
+    neg_count = 0
+    neu_count = 0
+
+    for idx, item in enumerate(items):
+        content = (item.get("content") or item.get("feedback") or "").strip()
+        if not content:
+            continue
+
+        sentiment_code, score, label = analyze_sentiment_ai(content)
+        if sentiment_code == "POS":
+            pos_count += 1
+        elif sentiment_code == "NEG":
+            neg_count += 1
+        else:
+            neu_count += 1
+
+        new_id = f"fb-bulk-{int(datetime.utcnow().timestamp() * 1000)}-{idx}"
+        record = FeedbackModel(
+            id=new_id,
+            content=content,
+            channel=item.get("channel", "support_ticket"),
+            sourceRef=item.get("sourceRef", "Bulk CSV Upload"),
+            customerLabel=item.get("customerLabel"),
+            sentiment=sentiment_code,
+            sentimentScore=score,
+            status="NEW",
+            workspaceId=item.get("workspaceId")
+        )
+
+        try:
+            db.session.add(record)
+            db.session.commit()
+            created_records.append(record.to_dict())
+        except Exception as e:
+            db.session.rollback()
+
     return jsonify({
-        "message": "Feedback analyzed successfully",
-        "data": res_dict
+        "message": f"Successfully processed {len(created_records)} bulk CSV feedback items",
+        "total_processed": len(created_records),
+        "positives_count": pos_count,
+        "negatives_count": neg_count,
+        "neutrals_count": neu_count,
+        "data": created_records
     }), 201
 
 @app.route("/feedbacks", methods=["GET"])
