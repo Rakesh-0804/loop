@@ -24,11 +24,11 @@ type Feedback = {
 };
 
 const CHANNELS = [
-  { value: 'support_ticket', label: 'Support ticket 🎟️' },
-  { value: 'app_store', label: 'App store review ⭐️' },
-  { value: 'nps_survey', label: 'NPS survey 📈' },
-  { value: 'sales_call', label: 'Sales call note 📞' },
-  { value: 'community_post', label: 'Community post 💬' },
+  { value: 'support_ticket', label: 'Support Ticket' },
+  { value: 'app_store', label: 'App Store Review' },
+  { value: 'nps_survey', label: 'NPS Survey' },
+  { value: 'sales_call', label: 'Sales Call Note' },
+  { value: 'community_post', label: 'Community Post' },
 ];
 
 export default function InboxPage() {
@@ -237,7 +237,14 @@ export default function InboxPage() {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           {/* Search Box */}
           <div className="relative flex-1">
-            <span className="absolute left-3.5 top-2.5 text-gray-400 text-sm">🔍</span>
+            <svg
+              className="absolute left-3.5 top-3 w-4 h-4 text-gray-400 pointer-events-none"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
             <input
               type="text"
               placeholder="Search feedback text, customer name, or source..."
