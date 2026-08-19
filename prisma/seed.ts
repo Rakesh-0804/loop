@@ -3,9 +3,9 @@ import bcrypt from 'bcryptjs';
 import 'dotenv/config';
 
 async function main() {
-  console.log('Resetting and initializing clean database...');
+  console.log('Seeding Project LOOP workspace and user accounts...');
 
-  // Clean all existing data
+  // Clean existing data
   await prisma.feedbackTheme.deleteMany();
   await prisma.embedding.deleteMany();
   await prisma.feedback.deleteMany();
@@ -23,13 +23,35 @@ async function main() {
 
   const passwordHash = await bcrypt.hash('password123', 10);
 
-  // Create Primary Admin User
+  // Create Admin User
   await prisma.user.create({
     data: {
       name: 'Alex Mercer (Admin)',
       email: 'admin@projectloop.ai',
       passwordHash,
       role: 'ADMIN',
+      workspaceId: workspace.id,
+    },
+  });
+
+  // Create Analyst User
+  await prisma.user.create({
+    data: {
+      name: 'Sarah Chen (Analyst)',
+      email: 'analyst@projectloop.ai',
+      passwordHash,
+      role: 'ANALYST',
+      workspaceId: workspace.id,
+    },
+  });
+
+  // Create Viewer User
+  await prisma.user.create({
+    data: {
+      name: 'David Miller (Viewer)',
+      email: 'viewer@projectloop.ai',
+      passwordHash,
+      role: 'VIEWER',
       workspaceId: workspace.id,
     },
   });
@@ -52,10 +74,11 @@ async function main() {
     });
   }
 
-  console.log('Clean database initialization complete!');
+  console.log('Database initialization complete!');
   console.log(`Workspace: ${workspace.name}`);
   console.log(`Admin User: admin@projectloop.ai / password123`);
-  console.log(`Feedbacks: 0 | Reports: 0`);
+  console.log(`Analyst User: analyst@projectloop.ai / password123`);
+  console.log(`Viewer User: viewer@projectloop.ai / password123`);
 }
 
 main()
