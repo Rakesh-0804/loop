@@ -1,4 +1,4 @@
--- Project LOOP - PostgreSQL Database Dump & Schema Definition
+-- Project LOOP - Complete PostgreSQL Database Dump & Schema Definition
 -- Database Engine: PostgreSQL (Neon / Standard PG)
 
 CREATE TYPE "Role" AS ENUM ('ADMIN', 'ANALYST', 'VIEWER');
@@ -77,11 +77,13 @@ CREATE TABLE "Report" (
     CONSTRAINT "Report_workspaceId_fkey" FOREIGN KEY ("workspaceId") REFERENCES "Workspace"("id") ON DELETE CASCADE ON UPDATE CASCADE
 );
 
--- Initial Workspace & Admin User Inserts
+-- Initial Workspace & Users Inserts
 INSERT INTO "Workspace" ("id", "name", "createdAt") VALUES ('cmu001ws0000001', 'Acme SaaS Corp', CURRENT_TIMESTAMP);
 
 INSERT INTO "User" ("id", "name", "email", "passwordHash", "role", "workspaceId") VALUES 
-('cmu001usr000001', 'Alex Mercer (Admin)', 'admin@projectloop.ai', '$2a$10$K9W4W8.0mC9T9X7L8G3Xye0G4P4G.Y/P/6N5V4M3K2J1I0H9G8F7E', 'ADMIN', 'cmu001ws0000001');
+('usr-admin-01', 'Alex Mercer (Admin)', 'admin@projectloop.ai', '$2a$10$K9W4W8.0mC9T9X7L8G3Xye0G4P4G.Y/P/6N5V4M3K2J1I0H9G8F7E', 'ADMIN', 'cmu001ws0000001'),
+('usr-analyst-02', 'Sarah Chen (Analyst)', 'analyst@projectloop.ai', '$2a$10$K9W4W8.0mC9T9X7L8G3Xye0G4P4G.Y/P/6N5V4M3K2J1I0H9G8F7E', 'ANALYST', 'cmu001ws0000001'),
+('usr-viewer-03', 'David Miller (Viewer)', 'viewer@projectloop.ai', '$2a$10$K9W4W8.0mC9T9X7L8G3Xye0G4P4G.Y/P/6N5V4M3K2J1I0H9G8F7E', 'VIEWER', 'cmu001ws0000001');
 
 INSERT INTO "Theme" ("id", "name", "description", "color", "workspaceId") VALUES
 ('th-1', 'Performance & Speed', 'System responsiveness and page load speed.', '#3B82F6', 'cmu001ws0000001'),
