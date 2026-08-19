@@ -35,21 +35,20 @@ export interface AIReportResult {
 }
 
 /**
- * Decisive AI Sentiment & Theme Classifier using Gemini 3.6 Flash
+ * Balanced AI Sentiment & Theme Classifier using Gemini 3.6 Flash
  */
 export async function analyzeFeedbackAI(content: string, availableThemes: string[] = []): Promise<AIAnalysisResult> {
   if (aiClient) {
     try {
-      const prompt = `You are a highly decisive customer feedback sentiment intelligence AI. Analyze this customer feedback text:
+      const prompt = `You are an expert customer feedback sentiment intelligence AI. Analyze this customer feedback text:
 "${content}"
 
 Available Themes: ${JSON.stringify(availableThemes)}
 
-CRITICAL CLASSIFICATION INSTRUCTIONS:
-- DO NOT default to neutral ("NEU"). Be decisive.
-- Classify as "POS" if the feedback expresses praise, satisfaction, feature appreciation, speed, good design, enthusiasm, or general approval.
-- Classify as "NEG" if the feedback contains any complaint, feature request, frustration, slow speed, delay, billing issue, bug, crash, unhelpfulness, or disappointment.
-- Assign "NEU" ONLY if the text is 100% strictly neutral facts with zero positive or negative polarity.
+SENTIMENT CLASSIFICATION RULES:
+- Classify as "POS" if the feedback expresses praise, satisfaction, feature appreciation, speed, good design, or positive tone.
+- Classify as "NEG" if the feedback contains complaints, dissatisfaction, slow speed, delay, billing issue, bug, crash, or negative tone.
+- Classify as "NEU" if the feedback is an inquiry, question, informational statement, feature clarification, documentation request, or neutral comment.
 
 Return ONLY a valid JSON object matching this schema:
 {
@@ -67,10 +66,10 @@ Return ONLY a valid JSON object matching this schema:
       const cleanJson = outputText.replace(/```json/g, '').replace(/```/g, '').trim();
       const parsed = JSON.parse(cleanJson);
 
-      let sentiment: 'POS' | 'NEU' | 'NEG' = 'POS';
+      let sentiment: 'POS' | 'NEU' | 'NEG' = 'NEU';
       if (parsed.sentiment === 'NEG' || parsed.sentiment === 'NEGATIVE') sentiment = 'NEG';
-      else if (parsed.sentiment === 'NEU' || parsed.sentiment === 'NEUTRAL') sentiment = 'NEU';
       else if (parsed.sentiment === 'POS' || parsed.sentiment === 'POSITIVE') sentiment = 'POS';
+      else sentiment = 'NEU';
 
       return {
         sentiment,
@@ -82,7 +81,7 @@ Return ONLY a valid JSON object matching this schema:
     }
   }
 
-  // Enhanced Decisive Local Sentiment Engine
+  // Balanced Local Sentiment Engine
   const text = content.toLowerCase();
 
   const posKeywords = [
@@ -95,34 +94,35 @@ Return ONLY a valid JSON object matching this schema:
     'slow', 'bug', 'failed', 'fail', 'confusing', 'incorrect', 'issue', 'problem', 'delay', 'took',
     'broken', 'error', 'hate', 'bad', 'disaster', 'worst', 'terrible', 'canceling', 'cancel', 'unacceptable',
     'frustrating', 'frustrated', 'horrible', 'outage', 'freeze', 'crash', 'refund', 'unhelpful', 'unusable',
-    'lacking', 'lack', 'need', 'pain', 'painful', 'locked', 'wrong', 'poor', 'disappointing', 'disappointed',
-    'nightmare', 'unreadable', 'cut off', 'stale', 'double-charged'
+    'locked', 'wrong', 'poor', 'disappointing', 'disappointed', 'nightmare', 'unreadable', 'cut off', 'stale', 'double-charged'
+  ];
+
+  const neuKeywords = [
+    'please', 'how', 'what', 'when', 'where', 'why', 'can', 'does', 'is', 'are', 'inquiry', 'question',
+    'check', 'checking', 'confirm', 'requesting', 'clarification', 'timeline', 'information', 'details',
+    'documentation', 'doc', 'version', 'policy', 'procedure', 'retention', 'parameter', 'parameters', 'roadmap'
   ];
 
   let posMatch = 0;
   let negMatch = 0;
+  let neuMatch = 0;
 
   posKeywords.forEach((kw) => { if (text.includes(kw)) posMatch++; });
   negKeywords.forEach((kw) => { if (text.includes(kw)) negMatch++; });
+  neuKeywords.forEach((kw) => { if (text.includes(kw)) neuMatch++; });
 
-  let sentiment: 'POS' | 'NEU' | 'NEG' = 'POS';
-  let sentimentScore = 0.85;
+  let sentiment: 'POS' | 'NEU' | 'NEG' = 'NEU';
+  let sentimentScore = 0.50;
 
-  if (negMatch > 0 && negMatch >= posMatch) {
+  if (negMatch > posMatch && negMatch > 0) {
     sentiment = 'NEG';
     sentimentScore = Math.max(0.05, 0.35 - negMatch * 0.08);
-  } else if (posMatch > negMatch) {
+  } else if (posMatch > negMatch && posMatch > 0) {
     sentiment = 'POS';
     sentimentScore = Math.min(0.98, 0.70 + posMatch * 0.08);
   } else {
-    // If no strong positive words, check for complaints or requests
-    if (text.includes('need') || text.includes('request') || text.includes('want') || text.includes('missing') || text.includes('add')) {
-      sentiment = 'NEG';
-      sentimentScore = 0.30;
-    } else {
-      sentiment = 'POS';
-      sentimentScore = 0.80;
-    }
+    sentiment = 'NEU';
+    sentimentScore = 0.50;
   }
 
   const themes: string[] = [];

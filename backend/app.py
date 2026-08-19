@@ -84,18 +84,17 @@ class ReportModel(db.Model):
     workspaceId = db.Column(db.String, nullable=False)
     generatedBy = db.Column(db.String, default='Admin')
 
-# Decisive Sentiment Analysis Engine (Gemini 3.6 Flash + Decisive Fallback)
+# Balanced Sentiment Analysis Engine (Gemini 3.6 Flash + Balanced Fallback)
 def analyze_sentiment_ai(text):
     if gemini_client:
         try:
-            prompt = f"""You are a decisive customer feedback sentiment AI. Analyze this customer text:
+            prompt = f"""You are an expert customer feedback sentiment intelligence AI. Analyze this customer text:
 "{text}"
 
-CRITICAL CLASSIFICATION RULE:
-- DO NOT default to neutral ("NEUTRAL"). Be highly decisive.
-- Classify as "POSITIVE" if the feedback contains praise, satisfaction, speed, good UI, helpfulness, or enthusiasm.
-- Classify as "NEGATIVE" if the feedback contains complaints, requests for missing features, delay, slow speed, billing errors, bugs, or frustration.
-- Assign "NEUTRAL" ONLY if the text is 100% strictly neutral fact with zero opinion or emotion.
+SENTIMENT CLASSIFICATION RULES:
+- Classify as "POSITIVE" if the feedback contains praise, satisfaction, speed, good UI, or positive tone.
+- Classify as "NEGATIVE" if the feedback contains complaints, slow performance, billing errors, bugs, or negative tone.
+- Classify as "NEUTRAL" if the feedback is an inquiry, question, informational statement, feature clarification, documentation request, or neutral comment.
 
 Return ONLY a valid JSON object matching this schema:
 {{
@@ -109,28 +108,27 @@ Return ONLY a valid JSON object matching this schema:
             clean_json = re.sub(r'```json|```', '', response.output_text or '').strip()
             parsed = json.loads(clean_json)
             s_map = {"POSITIVE": "POS", "NEGATIVE": "NEG", "NEUTRAL": "NEU"}
-            raw_s = parsed.get("sentiment", "POSITIVE").upper()
-            return s_map.get(raw_s, "POS"), float(parsed.get("score", 0.85)), raw_s
+            raw_s = parsed.get("sentiment", "NEUTRAL").upper()
+            return s_map.get(raw_s, "NEU"), float(parsed.get("score", 0.50)), raw_s
         except Exception as e:
-            print(f"Gemini AI error, using decisive fallback: {e}")
+            print(f"Gemini AI error, using fallback: {e}")
 
-    # Decisive Fallback Rule Engine
+    # Balanced Fallback Rule Engine
     lower = text.lower()
     pos_words = ['good', 'great', 'love', 'fast', 'amazing', 'excellent', 'useful', 'happy', 'best', 'awesome', 'improved', 'crisp', 'nice', 'clean', 'intuitive', 'thanks', 'thank', 'perfect', 'gorgeous', 'game-changer', 'impressed', 'recommend', 'smooth']
-    neg_words = ['slow', 'bad', 'hate', 'delay', 'issue', 'problem', 'bug', 'failed', 'fail', 'broken', 'worst', 'error', 'poor', 'disaster', 'terrible', 'canceling', 'cancel', 'unacceptable', 'frustrating', 'frustrated', 'horrible', 'outage', 'freeze', 'crash', 'refund', 'unhelpful', 'unusable', 'lacking', 'lack', 'need', 'pain', 'painful', 'locked', 'wrong', 'disappointing', 'disappointed', 'nightmare', 'unreadable', 'cut off', 'stale']
+    neg_words = ['slow', 'bad', 'hate', 'delay', 'issue', 'problem', 'bug', 'failed', 'fail', 'broken', 'worst', 'error', 'poor', 'disaster', 'terrible', 'canceling', 'cancel', 'unacceptable', 'frustrating', 'frustrated', 'horrible', 'outage', 'freeze', 'crash', 'refund', 'unhelpful', 'unusable', 'locked', 'wrong', 'disappointing', 'disappointed', 'nightmare', 'unreadable', 'cut off', 'stale']
+    neu_words = ['please', 'how', 'what', 'when', 'where', 'why', 'can', 'does', 'is', 'are', 'inquiry', 'question', 'check', 'checking', 'confirm', 'requesting', 'clarification', 'timeline', 'information', 'details', 'documentation', 'doc', 'version', 'policy', 'procedure', 'retention', 'parameter', 'parameters', 'roadmap']
 
     pos_count = sum(1 for w in pos_words if w in lower)
     neg_count = sum(1 for w in neg_words if w in lower)
+    neu_count = sum(1 for w in neu_words if w in lower)
 
-    if neg_count > 0 and neg_count >= pos_count:
+    if neg_count > pos_count and neg_count > 0:
         return "NEG", max(0.05, round(0.35 - neg_count * 0.08, 4)), "NEGATIVE"
-    elif pos_count > neg_count:
+    elif pos_count > neg_count and pos_count > 0:
         return "POS", min(0.98, round(0.70 + pos_count * 0.08, 4)), "POSITIVE"
     else:
-        if any(w in lower for w in ['need', 'request', 'want', 'missing', 'add', 'would be']):
-            return "NEG", 0.30, "NEGATIVE"
-        else:
-            return "POS", 0.80, "POSITIVE"
+        return "NEU", 0.50, "NEUTRAL"
 
 # Flask Routes
 @app.route("/", methods=["GET"])
@@ -191,6 +189,11 @@ def submit_feedback():
 
     res_dict = record.to_dict()
     res_dict["sentiment"] = label
+
+    return jsonify({
+        "message": "Feedback analyzed successfully",
+        "data": res_dict
+    }), 201
 
 @app.route("/bulk-upload-csv", methods=["POST"])
 def bulk_upload_csv():

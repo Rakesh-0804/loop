@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Project LOOP Documentation - Team No. 16</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 20mm 15mm 20mm 15mm;
+        }
+        body {
+            font-family: 'Segoe UI', Helvetica, Arial, sans-serif;
+            color: #1e293b;
+            background-color: #ffffff;
+            line-height: 1.6;
+            font-size: 10.5pt;
+            margin: 0;
+            padding: 0;
+        }
+        .cover-header {
+            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #312e81 100%);
+            color: #ffffff;
+            padding: 35px 30px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+        }
+        .cover-header h1 {
+            font-size: 24pt;
+            margin: 0 0 8px 0;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            color: #ffffff;
+        }
+        .cover-header h2 {
+            font-size: 13pt;
+            margin: 0 0 20px 0;
+            font-weight: 400;
+            color: #c7d2fe;
+        }
+        .badge-row {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .badge {
+            background: rgba(255,255,255,0.15);
+            border: 1px solid rgba(255,255,255,0.3);
+            color: #ffffff;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 9pt;
+            font-weight: 600;
+        }
+        .meta-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 25px;
+            font-size: 9.5pt;
+        }
+        .meta-table th, .meta-table td {
+            padding: 8px 12px;
+            border: 1px solid #e2e8f0;
+            text-align: left;
+        }
+        .meta-table th {
+            background-color: #f8fafc;
+            color: #475569;
+            font-weight: 700;
+            width: 30%;
+        }
+        .meta-table td {
+            color: #0f172a;
+            font-weight: 600;
+        }
+        h2.section-title {
+            font-size: 14pt;
+            color: #1e1b4b;
+            border-bottom: 2px solid #6366f1;
+            padding-bottom: 5px;
+            margin-top: 25px;
+            margin-bottom: 12px;
+            font-weight: 700;
+            page-break-after: avoid;
+        }
+        h3.subsection-title {
+            font-size: 11.5pt;
+            color: #312e81;
+            margin-top: 18px;
+            margin-bottom: 8px;
+            font-weight: 700;
+            page-break-after: avoid;
+        }
+        p {
+            margin-top: 0;
+            margin-bottom: 10px;
+            color: #334155;
+        }
+        ul {
+            margin-top: 0;
+            margin-bottom: 12px;
+            padding-left: 20px;
+        }
+        li {
+            margin-bottom: 4px;
+            color: #334155;
+        }
+        table.data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            margin-bottom: 15px;
+            font-size: 9pt;
+        }
+        table.data-table th {
+            background-color: #4338ca;
+            color: #ffffff;
+            padding: 8px 10px;
+            font-weight: 700;
+            text-align: left;
+        }
+        table.data-table td {
+            padding: 8px 10px;
+            border-bottom: 1px solid #e2e8f0;
+            color: #1e293b;
+        }
+        table.data-table tr:nth-child(even) {
+            background-color: #f8fafc;
+        }
+        pre {
+            background-color: #0f172a;
+            color: #e2e8f0;
+            padding: 12px 15px;
+            border-radius: 8px;
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 8.5pt;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            margin-top: 8px;
+            margin-bottom: 15px;
+            border: 1px solid #1e293b;
+        }
+        .highlight-box {
+            background-color: #eef2ff;
+            border-left: 4px solid #6366f1;
+            padding: 12px 15px;
+            border-radius: 0 8px 8px 0;
+            margin-bottom: 15px;
+            font-size: 9.5pt;
+        }
+        .footer {
+            margin-top: 30px;
+            padding-top: 12px;
+            border-top: 1px solid #e2e8f0;
+            text-align: center;
+            font-size: 8.5pt;
+            color: #64748b;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Cover Header -->
+    <div class="cover-header">
+        <h1>PROJECT LOOP</h1>
+        <h2>AI Customer Feedback Intelligence Platform - Technical Documentation</h2>
+        <div class="badge-row">
+            <span class="badge">Author: Rakesh R</span>
+            <span class="badge">Team No: 16</span>
+            <span class="badge">Google Gemini 3.6 Flash</span>
+            <span class="badge">Neon PostgreSQL</span>
+            <span class="badge">Next.js 16</span>
+        </div>
+    </div>
+
+    <!-- Metadata Summary Table -->
+    <table class="meta-table">
+        <tr>
+            <th>Project Title</th>
+            <td>Project LOOP - AI Customer Feedback Intelligence Platform</td>
+        </tr>
+        <tr>
+            <th>Author / Student Lead</th>
+            <td>Rakesh R</td>
+        </tr>
+        <tr>
+            <th>Team Number</th>
+            <td>Team No. 16</td>
+        </tr>
+        <tr>
+            <th>Version & Status</th>
+            <td>v1.0.0 (Production Release & Verified)</td>
+        </tr>
+        <tr>
+            <th>GitHub Repository</th>
+            <td>https://github.com/Rakesh-0804/loop.git</td>
+        </tr>
+        <tr>
+            <th>Live Deployment URL</th>
+            <td>https://loop-kappa-six.vercel.app</td>
+        </tr>
+    </table>
+
+    <!-- Section 1 -->
+    <h2 class="section-title">1. Executive Summary & Problem Statement</h2>
+    <p>
+        <strong>Project LOOP</strong> is an enterprise-grade AI customer feedback intelligence system designed to aggregate, analyze, and synthesize raw multi-channel customer feedback into real-time actionable product strategy insights.
+    </p>
+    <div class="highlight-box">
+        <strong>Core Objective:</strong> Replace fragmented spreadsheet feedback reviews with instant, decisive AI sentiment classification (Positive, Neutral, Negative), continuous satisfaction scoring (0.05 to 0.98), automated theme clustering, and C-suite executive report generation.
+    </div>
+
+    <!-- Section 2 -->
+    <h2 class="section-title">2. System Architecture & Tech Stack</h2>
+    <p>The platform is architected on a modern serverless stack providing sub-second query performance and seamless scalability:</p>
+    <ul>
+        <li><strong>Frontend Framework:</strong> Next.js 16 (App Router, Turbopack, React 19, Tailwind CSS).</li>
+        <li><strong>AI Engine:</strong> Google Gemini 3.6 Flash (via <code>@google/genai</code> SDK v2.17+).</li>
+        <li><strong>Database:</strong> Neon PostgreSQL (AWS Cloud Pooler Connection).</li>
+        <li><strong>ORM & Adapter:</strong> Prisma 7.9.0 with <code>@prisma/adapter-pg</code> driver adapter.</li>
+        <li><strong>Microservices API:</strong> Python Flask 3.0+ backend connected via SQLAlchemy.</li>
+        <li><strong>Authentication & Security:</strong> NextAuth v5 (JWT Session, <code>bcryptjs</code> hashing, RBAC middleware).</li>
+        <li><strong>UI & Aesthetics:</strong> Glassmorphic design with unique per-page background particle visual canvas rendering (Dashboard, Inbox, Analytics, Themes, Reports, Settings).</li>
+    </ul>
+
+    <!-- Section 3 -->
+    <h2 class="section-title">3. Database Entity-Relationship (ER) Schema</h2>
+    <p>The relational database schema is deployed on Neon PostgreSQL with enforced cascading references:</p>
+    <pre><code>CREATE TYPE "Role" AS ENUM ('ADMIN', 'ANALYST', 'VIEWER');
+CREATE TYPE "Sentiment" AS ENUM ('POS', 'NEU', 'NEG');
+CREATE TYPE "FeedbackStatus" AS ENUM ('NEW', 'REVIEWED', 'ACTIONED');
+
+CREATE TABLE "Workspace" (
+    "id" TEXT PRIMARY KEY,
+    "name" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE "User" (
+    "id" TEXT PRIMARY KEY,
+    "name" TEXT NOT NULL,
+    "email" TEXT UNIQUE NOT NULL,
+    "passwordHash" TEXT NOT NULL,
+    "role" "Role" DEFAULT 'ADMIN',
+    "workspaceId" TEXT NOT NULL REFERENCES "Workspace"("id") ON DELETE CASCADE
+);
+
+CREATE TABLE "Feedback" (
+    "id" TEXT PRIMARY KEY,
+    "content" TEXT NOT NULL,
+    "channel" TEXT NOT NULL,
+    "sourceRef" TEXT,
+    "customerLabel" TEXT,
+    "sentiment" "Sentiment",
+    "sentimentScore" DOUBLE PRECISION,
+    "status" "FeedbackStatus" DEFAULT 'NEW',
+    "createdAt" TIMESTAMP(3) DEFAULT CURRENT_TIMESTAMP,
+    "workspaceId" TEXT NOT NULL REFERENCES "Workspace"("id") ON DELETE CASCADE
+);
+
+CREATE TABLE "Report" (
+    "id" TEXT PRIMARY KEY,
+    "title" TEXT NOT NULL,
+    "periodStart" TIMESTAMP(3) NOT NULL,
+    "periodEnd" TIMESTAMP(3) NOT NULL,
+    "contentJson" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) DEFAULT CURRENT_TIMESTAMP,
+    "workspaceId" TEXT NOT NULL REFERENCES "Workspace"("id") ON DELETE CASCADE,
+    "generatedBy" TEXT NOT NULL
+);</code></pre>
+
+    <!-- Section 4 -->
+    <h2 class="section-title">4. Key Core Features & Modules</h2>
+    <h3 class="subsection-title">4.1 Multi-Channel Feedback & Bulk CSV Ingestion</h3>
+    <p>Supports feedback ingestion across 5 channels (Support Tickets, App Store Reviews, NPS Surveys, Sales Call Notes, Community Posts) plus bulk CSV file upload with automated batch Gemini AI scoring.</p>
+
+    <h3 class="subsection-title">4.2 Decisive AI Sentiment & Theme Analysis</h3>
+    <p>Decisive Gemini 3.6 Flash engine evaluates text without defaulting to neutral, assigning positive rating scores (0.70-0.98), negative rating scores (0.05-0.35), and matching theme categories.</p>
+
+    <h3 class="subsection-title">4.3 Executive Synthesis & Multi-Format Exports</h3>
+    <p>Generates detailed C-suite reports featuring CSAT satisfaction scores, Net Promoter Index, channel breakdown bars, churn risk callouts, customer quote excerpts, and strategic roadmaps. Supports PDF, CSV, and JSON exports.</p>
+
+    <!-- Section 5 -->
+    <h2 class="section-title">5. Test System Credentials</h2>
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Role</th>
+                <th>Email Address</th>
+                <th>Password</th>
+                <th>Permissions & Scope</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>ADMIN</strong></td>
+                <td>admin@projectloop.ai</td>
+                <td>password123</td>
+                <td>Full Administrative, User Management & System Rights</td>
+            </tr>
+            <tr>
+                <td><strong>ANALYST</strong></td>
+                <td>analyst@projectloop.ai</td>
+                <td>password123</td>
+                <td>Read/Write Feedback, Bulk Ingestion & Executive Reports</td>
+            </tr>
+            <tr>
+                <td><strong>VIEWER</strong></td>
+                <td>viewer@projectloop.ai</td>
+                <td>password123</td>
+                <td>Read-Only Dashboard, Analytics & Report Access</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- Section 6 -->
+    <h2 class="section-title">6. API Endpoint Reference</h2>
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Method</th>
+                <th>Endpoint Path</th>
+                <th>Service</th>
+                <th>Description</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>GET / POST</td>
+                <td>/api/feedback</td>
+                <td>Next.js API</td>
+                <td>Fetch or create feedback items with AI scoring</td>
+            </tr>
+            <tr>
+                <td>POST</td>
+                <td>/api/feedback/bulk-upload</td>
+                <td>Next.js API</td>
+                <td>Bulk CSV upload & batch Gemini AI sentiment classification</td>
+            </tr>
+            <tr>
+                <td>GET / POST</td>
+                <td>/api/reports</td>
+                <td>Next.js API</td>
+                <td>Fetch or synthesize executive intelligence reports</td>
+            </tr>
+            <tr>
+                <td>GET</td>
+                <td>/api/analysis</td>
+                <td>Next.js API</td>
+                <td>Compute multi-axis CSAT, NPS, and churn risk metrics</td>
+            </tr>
+            <tr>
+                <td>POST</td>
+                <td>/submit-feedback</td>
+                <td>Python Flask</td>
+                <td>Analyze single feedback via Flask backend</td>
+            </tr>
+            <tr>
+                <td>POST</td>
+                <td>/bulk-upload-csv</td>
+                <td>Python Flask</td>
+                <td>Process CSV item array via Flask AI engine</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- Footer -->
+    <div class="footer">
+        Project LOOP - AI Customer Feedback Intelligence Platform &bull; Author: <strong>Rakesh R</strong> &bull; <strong>Team No. 16</strong> &bull; August 2026
+    </div>
+
+</body>
+</html>

@@ -1,0 +1,101 @@
+feedback,channel,customerLabel,sourceRef
+"The Slack webhook integration setup was completely seamless! We now get instant alerts whenever a user submits negative feedback.",app_store,"TechFlow",Ref #4001
+"We love the AI automated report synthesis feature! It saves our product management team over 6 hours of manual spreadsheet work every single week.",nps_survey,"SaaSify",Ref #4002
+"The clean UI design overhaul is gorgeous! Navigation feels smooth, dark mode is easy on the eyes, and onboarding our new team members was effortless.",sales_call,"Northwind",Ref #4003
+"NPS Score: 10/10. Transparent pricing, easy seat management, and excellent customer service. Highly recommend Project LOOP to any SaaS company!",community_post,"InnovateHQ",Ref #4004
+"Webhook notifications failed silently yesterday, causing our engineering team to miss 5 critical customer outages.",support_ticket,"CloudNine",Ref #4005
+"The search query latency is unacceptable during high concurrency hours. Searching feedback text takes over 8 seconds to respond.",app_store,"InnoSoft",Ref #4006
+"NPS Score: 2/10. Frequent system downtime, unresponsive customer support, and buggy CSV export features. Considering switching providers.",nps_survey,"Acme SaaS Corp",Ref #4007
+"Support ticket resolution took 5 business days for a critical severity 1 incident. We are losing trust in the platform.",sales_call,"CyberShield",Ref #4008
+"Checking if there is a public status page to monitor API uptime and database maintenance schedules.",community_post,"DataOps Inc",Ref #4009
+"Please provide the complete API documentation for integrating external webhooks with third-party CRM tools.",support_ticket,"Starlight Systems",Ref #4010
+"Great app update! Mobile responsiveness is smooth on both iPhone and Android devices now.",app_store,"Nexus Digital",Ref #4011
+"The real-time sentiment index meter gives our C-suite immediate clarity during weekly executive reviews.",nps_survey,"Apex Global",Ref #4012
+"Setting up multi-tenant role permissions was straightforward. Adding new analysts took under 2 minutes.",sales_call,"TechFlow",Ref #4013
+"We love how easy it is to search historical feedback records by keyword and channel filter.",community_post,"SaaSify",Ref #4014
+"Billing invoice failed to generate the tax breakdown item. Customer support ignored our urgent ticket for 4 days and our account was locked unexpectedly.",support_ticket,"Northwind",Ref #4015
+"The latest iOS app update makes the screen freeze every time I scroll through long lists. Page load times are extremely slow and dark mode contrast is unreadable.",app_store,"InnovateHQ",Ref #4016
+"Our account was double-charged on our monthly subscription. When we reached out to support, the agent closed our ticket without issuing a refund. Horrible service.",nps_survey,"CloudNine",Ref #4017
+"Exporting large CSV files with 50,000+ rows times out repeatedly during peak business hours. Extremely frustrating for our data engineering team.",sales_call,"InnoSoft",Ref #4018
+"Checking if there is a public status page to monitor API uptime and database maintenance schedules.",community_post,"Acme SaaS Corp",Ref #4019
+"Please provide the complete API documentation for integrating external webhooks with third-party CRM tools.",support_ticket,"CyberShield",Ref #4020
+"The HubSpot CRM integration works flawlessly. Prospect interactions are synced automatically with zero manual effort.",app_store,"DataOps Inc",Ref #4021
+"Upgrading to the enterprise tier was the best decision we made this quarter. Search latency dropped by 50% across our entire team.",nps_survey,"Starlight Systems",Ref #4022
+"Exporting executive summaries to PDF is incredibly smooth. The print layout looks publication-ready and executive-approved.",sales_call,"Nexus Digital",Ref #4023
+"Dark mode UI aesthetics are top tier. The subtle background particle visuals make working in the dashboard a joy.",community_post,"Apex Global",Ref #4024
+"Pricing invoice is confusing and missing seat discount itemizations. Please audit our account subscription.",support_ticket,"TechFlow",Ref #4025
+"The API endpoint returns intermittent 504 Gateway Timeout errors when executing batch feedback updates.",app_store,"SaaSify",Ref #4026
+"Dark mode font contrast on table cells is too dim to read under bright office lighting.",nps_survey,"Northwind",Ref #4027
+"Data export dropped 15 feedback records without throwing any validation warning. Serious reliability concern.",sales_call,"InnovateHQ",Ref #4028
+"Checking if there is a public status page to monitor API uptime and database maintenance schedules.",community_post,"CloudNine",Ref #4029
+"Please provide the complete API documentation for integrating external webhooks with third-party CRM tools.",support_ticket,"InnoSoft",Ref #4030
+"The Slack webhook integration setup was completely seamless! We now get instant alerts whenever a user submits negative feedback.",app_store,"Acme SaaS Corp",Ref #4031
+"We love the AI automated report synthesis feature! It saves our product management team over 6 hours of manual spreadsheet work every single week.",nps_survey,"CyberShield",Ref #4032
+"The clean UI design overhaul is gorgeous! Navigation feels smooth, dark mode is easy on the eyes, and onboarding our new team members was effortless.",sales_call,"DataOps Inc",Ref #4033
+"NPS Score: 10/10. Transparent pricing, easy seat management, and excellent customer service. Highly recommend Project LOOP to any SaaS company!",community_post,"Starlight Systems",Ref #4034
+"Webhook notifications failed silently yesterday, causing our engineering team to miss 5 critical customer outages.",support_ticket,"Nexus Digital",Ref #4035
+"The search query latency is unacceptable during high concurrency hours. Searching feedback text takes over 8 seconds to respond.",app_store,"Apex Global",Ref #4036
+"NPS Score: 2/10. Frequent system downtime, unresponsive customer support, and buggy CSV export features. Considering switching providers.",nps_survey,"TechFlow",Ref #4037
+"Support ticket resolution took 5 business days for a critical severity 1 incident. We are losing trust in the platform.",sales_call,"SaaSify",Ref #4038
+"Checking if there is a public status page to monitor API uptime and database maintenance schedules.",community_post,"Northwind",Ref #4039
+"Please provide the complete API documentation for integrating external webhooks with third-party CRM tools.",support_ticket,"InnovateHQ",Ref #4040
+"Great app update! Mobile responsiveness is smooth on both iPhone and Android devices now.",app_store,"CloudNine",Ref #4041
+"The real-time sentiment index meter gives our C-suite immediate clarity during weekly executive reviews.",nps_survey,"InnoSoft",Ref #4042
+"Setting up multi-tenant role permissions was straightforward. Adding new analysts took under 2 minutes.",sales_call,"Acme SaaS Corp",Ref #4043
+"We love how easy it is to search historical feedback records by keyword and channel filter.",community_post,"CyberShield",Ref #4044
+"Billing invoice failed to generate the tax breakdown item. Customer support ignored our urgent ticket for 4 days and our account was locked unexpectedly.",support_ticket,"DataOps Inc",Ref #4045
+"The latest iOS app update makes the screen freeze every time I scroll through long lists. Page load times are extremely slow and dark mode contrast is unreadable.",app_store,"Starlight Systems",Ref #4046
+"Our account was double-charged on our monthly subscription. When we reached out to support, the agent closed our ticket without issuing a refund. Horrible service.",nps_survey,"Nexus Digital",Ref #4047
+"Exporting large CSV files with 50,000+ rows times out repeatedly during peak business hours. Extremely frustrating for our data engineering team.",sales_call,"Apex Global",Ref #4048
+"Checking if there is a public status page to monitor API uptime and database maintenance schedules.",community_post,"TechFlow",Ref #4049
+"Please provide the complete API documentation for integrating external webhooks with third-party CRM tools.",support_ticket,"SaaSify",Ref #4050
+"The HubSpot CRM integration works flawlessly. Prospect interactions are synced automatically with zero manual effort.",app_store,"Northwind",Ref #4051
+"Upgrading to the enterprise tier was the best decision we made this quarter. Search latency dropped by 50% across our entire team.",nps_survey,"InnovateHQ",Ref #4052
+"Exporting executive summaries to PDF is incredibly smooth. The print layout looks publication-ready and executive-approved.",sales_call,"CloudNine",Ref #4053
+"Dark mode UI aesthetics are top tier. The subtle background particle visuals make working in the dashboard a joy.",community_post,"InnoSoft",Ref #4054
+"Pricing invoice is confusing and missing seat discount itemizations. Please audit our account subscription.",support_ticket,"Acme SaaS Corp",Ref #4055
+"The API endpoint returns intermittent 504 Gateway Timeout errors when executing batch feedback updates.",app_store,"CyberShield",Ref #4056
+"Dark mode font contrast on table cells is too dim to read under bright office lighting.",nps_survey,"DataOps Inc",Ref #4057
+"Data export dropped 15 feedback records without throwing any validation warning. Serious reliability concern.",sales_call,"Starlight Systems",Ref #4058
+"Checking if there is a public status page to monitor API uptime and database maintenance schedules.",community_post,"Nexus Digital",Ref #4059
+"Please provide the complete API documentation for integrating external webhooks with third-party CRM tools.",support_ticket,"Apex Global",Ref #4060
+"The Slack webhook integration setup was completely seamless! We now get instant alerts whenever a user submits negative feedback.",app_store,"TechFlow",Ref #4061
+"We love the AI automated report synthesis feature! It saves our product management team over 6 hours of manual spreadsheet work every single week.",nps_survey,"SaaSify",Ref #4062
+"The clean UI design overhaul is gorgeous! Navigation feels smooth, dark mode is easy on the eyes, and onboarding our new team members was effortless.",sales_call,"Northwind",Ref #4063
+"NPS Score: 10/10. Transparent pricing, easy seat management, and excellent customer service. Highly recommend Project LOOP to any SaaS company!",community_post,"InnovateHQ",Ref #4064
+"Webhook notifications failed silently yesterday, causing our engineering team to miss 5 critical customer outages.",support_ticket,"CloudNine",Ref #4065
+"The search query latency is unacceptable during high concurrency hours. Searching feedback text takes over 8 seconds to respond.",app_store,"InnoSoft",Ref #4066
+"NPS Score: 2/10. Frequent system downtime, unresponsive customer support, and buggy CSV export features. Considering switching providers.",nps_survey,"Acme SaaS Corp",Ref #4067
+"Support ticket resolution took 5 business days for a critical severity 1 incident. We are losing trust in the platform.",sales_call,"CyberShield",Ref #4068
+"Checking if there is a public status page to monitor API uptime and database maintenance schedules.",community_post,"DataOps Inc",Ref #4069
+"Please provide the complete API documentation for integrating external webhooks with third-party CRM tools.",support_ticket,"Starlight Systems",Ref #4070
+"Great app update! Mobile responsiveness is smooth on both iPhone and Android devices now.",app_store,"Nexus Digital",Ref #4071
+"The real-time sentiment index meter gives our C-suite immediate clarity during weekly executive reviews.",nps_survey,"Apex Global",Ref #4072
+"Setting up multi-tenant role permissions was straightforward. Adding new analysts took under 2 minutes.",sales_call,"TechFlow",Ref #4073
+"We love how easy it is to search historical feedback records by keyword and channel filter.",community_post,"SaaSify",Ref #4074
+"Billing invoice failed to generate the tax breakdown item. Customer support ignored our urgent ticket for 4 days and our account was locked unexpectedly.",support_ticket,"Northwind",Ref #4075
+"The latest iOS app update makes the screen freeze every time I scroll through long lists. Page load times are extremely slow and dark mode contrast is unreadable.",app_store,"InnovateHQ",Ref #4076
+"Our account was double-charged on our monthly subscription. When we reached out to support, the agent closed our ticket without issuing a refund. Horrible service.",nps_survey,"CloudNine",Ref #4077
+"Exporting large CSV files with 50,000+ rows times out repeatedly during peak business hours. Extremely frustrating for our data engineering team.",sales_call,"InnoSoft",Ref #4078
+"Checking if there is a public status page to monitor API uptime and database maintenance schedules.",community_post,"Acme SaaS Corp",Ref #4079
+"Please provide the complete API documentation for integrating external webhooks with third-party CRM tools.",support_ticket,"CyberShield",Ref #4080
+"The HubSpot CRM integration works flawlessly. Prospect interactions are synced automatically with zero manual effort.",app_store,"DataOps Inc",Ref #4081
+"Upgrading to the enterprise tier was the best decision we made this quarter. Search latency dropped by 50% across our entire team.",nps_survey,"Starlight Systems",Ref #4082
+"Exporting executive summaries to PDF is incredibly smooth. The print layout looks publication-ready and executive-approved.",sales_call,"Nexus Digital",Ref #4083
+"Dark mode UI aesthetics are top tier. The subtle background particle visuals make working in the dashboard a joy.",community_post,"Apex Global",Ref #4084
+"Pricing invoice is confusing and missing seat discount itemizations. Please audit our account subscription.",support_ticket,"TechFlow",Ref #4085
+"The API endpoint returns intermittent 504 Gateway Timeout errors when executing batch feedback updates.",app_store,"SaaSify",Ref #4086
+"Dark mode font contrast on table cells is too dim to read under bright office lighting.",nps_survey,"Northwind",Ref #4087
+"Data export dropped 15 feedback records without throwing any validation warning. Serious reliability concern.",sales_call,"InnovateHQ",Ref #4088
+"Checking if there is a public status page to monitor API uptime and database maintenance schedules.",community_post,"CloudNine",Ref #4089
+"Please provide the complete API documentation for integrating external webhooks with third-party CRM tools.",support_ticket,"InnoSoft",Ref #4090
+"The Slack webhook integration setup was completely seamless! We now get instant alerts whenever a user submits negative feedback.",app_store,"Acme SaaS Corp",Ref #4091
+"We love the AI automated report synthesis feature! It saves our product management team over 6 hours of manual spreadsheet work every single week.",nps_survey,"CyberShield",Ref #4092
+"The clean UI design overhaul is gorgeous! Navigation feels smooth, dark mode is easy on the eyes, and onboarding our new team members was effortless.",sales_call,"DataOps Inc",Ref #4093
+"NPS Score: 10/10. Transparent pricing, easy seat management, and excellent customer service. Highly recommend Project LOOP to any SaaS company!",community_post,"Starlight Systems",Ref #4094
+"Webhook notifications failed silently yesterday, causing our engineering team to miss 5 critical customer outages.",support_ticket,"Nexus Digital",Ref #4095
+"The search query latency is unacceptable during high concurrency hours. Searching feedback text takes over 8 seconds to respond.",app_store,"Apex Global",Ref #4096
+"NPS Score: 2/10. Frequent system downtime, unresponsive customer support, and buggy CSV export features. Considering switching providers.",nps_survey,"TechFlow",Ref #4097
+"Support ticket resolution took 5 business days for a critical severity 1 incident. We are losing trust in the platform.",sales_call,"SaaSify",Ref #4098
+"Checking if there is a public status page to monitor API uptime and database maintenance schedules.",community_post,"Northwind",Ref #4099
+"Please provide the complete API documentation for integrating external webhooks with third-party CRM tools.",support_ticket,"InnovateHQ",Ref #4100
