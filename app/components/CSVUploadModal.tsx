@@ -55,29 +55,47 @@ export default function CSVUploadModal({ isOpen, onClose, onSuccess }: CSVUpload
     const lines = text.split(/\r\n|\n/);
     if (lines.length <= 1) return [];
 
-    const headers = lines[0].split(',').map((h) => h.trim().replace(/^"|"$/g, '').toLowerCase());
-    const items = [];
+    const headers = lines[0].split(',').map((h) => h.trim().replace(/^["']|["']$/g, '').toLowerCase());
+    const items: Array<{ content: string; channel: string; customerLabel: string; sourceRef: string }> = [];
+
+    // Robust CSV row splitter handling quotes and commas
+    const splitCSVLine = (line: string): string[] => {
+      const result: string[] = [];
+      let current = '';
+      let inQuotes = false;
+
+      for (let i = 0; i < line.length; i++) {
+        const char = line[i];
+        if (char === '"' || char === "'") {
+          inQuotes = !inQuotes;
+        } else if (char === ',' && !inQuotes) {
+          result.push(current.trim().replace(/^["']|["']$/g, '').replace(/""/g, '"'));
+          current = '';
+        } else {
+          current += char;
+        }
+      }
+      result.push(current.trim().replace(/^["']|["']$/g, '').replace(/""/g, '"'));
+      return result;
+    };
 
     for (let i = 1; i < lines.length; i++) {
       const line = lines[i].trim();
       if (!line) continue;
 
-      // Naive CSV regex parser supporting quoted fields
-      const values = line.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g) || line.split(',');
-      const cleanValues = values.map((v) => v.trim().replace(/^"|"$/g, '').replace(/""/g, '"'));
-
+      const cleanValues = splitCSVLine(line);
       const row: Record<string, string> = {};
       headers.forEach((h, idx) => {
         row[h] = cleanValues[idx] || '';
       });
 
       const content = row['feedback'] || row['content'] || row['text'] || cleanValues[0] || '';
-      if (content) {
+      if (content && content.length > 2) {
         items.push({
           content,
           channel: row['channel'] || 'support_ticket',
-          customerLabel: row['customerlabel'] || row['customer'] || row['user'] || '',
-          sourceRef: row['sourceref'] || row['source'] || 'CSV Bulk Upload',
+          customerLabel: row['customerlabel'] || row['customer'] || row['user'] || row['account'] || '',
+          sourceRef: row['sourceref'] || row['source'] || row['reference'] || 'CSV Bulk Upload',
         });
       }
     }
