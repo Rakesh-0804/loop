@@ -36,6 +36,19 @@ const SUPPORT_KEYWORDS = ['support', 'ticket', 'reply', 'response', 'wait', 'del
 
 function computeAnalysis(feedbacks: AnalysisFeedback[], timeframe: string, channel: string) {
   const total = feedbacks.length;
+
+  const numDays = timeframe === '7d' ? 7 : timeframe === '30d' ? 30 : 30;
+  const now = new Date();
+
+  // Compute daily trend points for Bar Chart
+  const trendMap: Record<string, { date: string; pos: number; neu: number; neg: number; total: number }> = {};
+  for (let i = numDays - 1; i >= 0; i--) {
+    const d = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
+    const key = d.toISOString().slice(5, 10); // MM-DD
+    const label = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    trendMap[key] = { date: label, pos: 0, neu: 0, neg: 0, total: 0 };
+  }
+
   if (total === 0) {
     return {
       netSentimentIndex: 0,
@@ -45,6 +58,7 @@ function computeAnalysis(feedbacks: AnalysisFeedback[], timeframe: string, chann
       sentimentByTheme: {},
       keywordDrivers: { positive: [], negative: [] },
       riskFlags: [],
+      trendData: Object.values(trendMap),
       totalAnalyzed: 0,
       timeframe,
       channel,
@@ -132,6 +146,15 @@ function computeAnalysis(feedbacks: AnalysisFeedback[], timeframe: string, chann
         }
       }
     }
+
+    // Accumulate daily trend
+    const fbDateKey = new Date(fb.createdAt).toISOString().slice(5, 10);
+    if (trendMap[fbDateKey]) {
+      trendMap[fbDateKey].total++;
+      if (fb.sentiment === 'POS') trendMap[fbDateKey].pos++;
+      else if (fb.sentiment === 'NEG') trendMap[fbDateKey].neg++;
+      else trendMap[fbDateKey].neu++;
+    }
   }
 
   if (billingNegCount >= 2) {
@@ -183,6 +206,7 @@ function computeAnalysis(feedbacks: AnalysisFeedback[], timeframe: string, chann
       negative: negativeDrivers,
     },
     riskFlags,
+    trendData: Object.values(trendMap),
     totalAnalyzed: total,
     timeframe,
     channel,
@@ -195,7 +219,7 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const workspaceId = (session.user as { workspaceId?: string }).workspaceId;
+  const workspaceId = (session.user as { workspaceId?: string }).workspaceId || 'cmu001ws0000001';
   const { searchParams } = new URL(req.url);
   const timeframe = searchParams.get('timeframe') || '30d';
   const channel = searchParams.get('channel') || 'ALL';

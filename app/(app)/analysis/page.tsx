@@ -22,6 +22,14 @@ type RiskFlag = {
   channel: string;
 };
 
+type TrendPoint = {
+  date: string;
+  pos: number;
+  neu: number;
+  neg: number;
+  total: number;
+};
+
 type AnalysisData = {
   netSentimentIndex: number;
   csat: number;
@@ -33,14 +41,15 @@ type AnalysisData = {
     negative: KeywordDriver[];
   };
   riskFlags: RiskFlag[];
+  trendData?: TrendPoint[];
   totalAnalyzed: number;
   timeframe: string;
   channel: string;
 };
 
 const TIMEFRAMES = [
-  { value: '7d', label: '7 Days' },
-  { value: '30d', label: '30 Days' },
+  { value: '7d', label: 'Past 7 Days' },
+  { value: '30d', label: 'Past 30 Days' },
   { value: 'all', label: 'All Time' },
 ];
 
@@ -73,6 +82,7 @@ export default function AnalysisPage() {
   const [data, setData] = useState<AnalysisData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [activeChartTab, setActiveChartTab] = useState<'both' | 'pie' | 'bar'>('both');
 
   useEffect(() => {
     let cancelled = false;
@@ -137,17 +147,6 @@ export default function AnalysisPage() {
     Object.entries(data.sentimentByChannel).forEach(([ch, counts]) => {
       rows.push([CHANNEL_LABELS[ch] || ch, String(counts.POS), String(counts.NEU), String(counts.NEG)]);
     });
-    rows.push([]);
-    rows.push(['Keyword Drivers']);
-    rows.push(['Type', 'Keyword', 'Frequency', 'Impact']);
-    data.keywordDrivers.positive.forEach((k) => rows.push(['Positive', k.keyword, String(k.frequency), k.impact]));
-    data.keywordDrivers.negative.forEach((k) => rows.push(['Negative', k.keyword, String(k.frequency), k.impact]));
-    rows.push([]);
-    rows.push(['Risk Flags']);
-    rows.push(['Type', 'Severity', 'Count', 'Description', 'Channel']);
-    data.riskFlags.forEach((r) =>
-      rows.push([r.type, r.severity, String(r.count), r.description, CHANNEL_LABELS[r.channel] || r.channel])
-    );
 
     const csv = rows.map((r) => r.map((c) => `"${c.replace(/"/g, '""')}"`).join(',')).join('\n');
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -161,25 +160,7 @@ export default function AnalysisPage() {
 
   function exportJSON() {
     if (!data) return;
-    const payload = {
-      meta: {
-        product: 'LOOP AI Feedback Analysis',
-        generatedAt: new Date().toISOString(),
-        timeframe: data.timeframe,
-        channel: data.channel,
-        totalAnalyzed: data.totalAnalyzed,
-      },
-      metrics: {
-        netSentimentIndex: data.netSentimentIndex,
-        csat: data.csat,
-        sentimentDistribution: data.sentimentDistribution,
-      },
-      sentimentByChannel: data.sentimentByChannel,
-      sentimentByTheme: data.sentimentByTheme,
-      keywordDrivers: data.keywordDrivers,
-      riskFlags: data.riskFlags,
-    };
-    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -193,7 +174,7 @@ export default function AnalysisPage() {
       <div className="p-8 max-w-7xl mx-auto w-full flex items-center justify-center min-h-[60vh]">
         <div className="flex flex-col items-center gap-3">
           <div className="w-10 h-10 border-4 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin"></div>
-          <p className="text-sm text-gray-400">Computing deep analytics...</p>
+          <p className="text-sm text-gray-400">Computing deep AI analytics & rendering charts...</p>
         </div>
       </div>
     );
@@ -205,6 +186,18 @@ export default function AnalysisPage() {
   const neuPct = total > 0 ? Math.round((totalCounts.NEU / total) * 100) : 0;
   const negPct = total > 0 ? Math.round((totalCounts.NEG / total) * 100) : 0;
 
+  // SVG Pie/Donut Chart calculation
+  const circumference = 2 * Math.PI * 40; // r=40
+  const posStroke = (posPct / 100) * circumference;
+  const neuStroke = (neuPct / 100) * circumference;
+  const negStroke = (negPct / 100) * circumference;
+
+  const neuOffset = circumference - posStroke;
+  const negOffset = circumference - (posStroke + neuStroke);
+
+  const trendPoints = data?.trendData || [];
+  const maxTrendVal = Math.max(1, ...trendPoints.map((t) => t.total));
+
   return (
     <div className="p-6 md:p-8 max-w-7xl mx-auto w-full space-y-8 animate-fadeIn">
       {/* Header */}
@@ -214,7 +207,7 @@ export default function AnalysisPage() {
             <span>📈 Deep AI Analytics Hub</span>
           </h1>
           <p className="text-gray-400 text-sm mt-1">
-            Net sentiment intelligence, keyword drivers, theme distribution, and critical risk flags.
+            Real-time sentiment charts, 7 & 30-day response trends, keyword drivers, and critical risk flags.
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -235,52 +228,82 @@ export default function AnalysisPage() {
 
       {error && <p className="text-sm text-rose-400 font-medium">{error}</p>}
 
-      {/* Filters */}
+      {/* Filter Bar with Past 7 Days & 30 Days Selector */}
       <div className="glass-panel p-5 space-y-4">
-        <div className="flex flex-col md:flex-row md:items-center gap-4">
-          <div>
-            <span className="text-xs font-semibold text-gray-500 block mb-2">Timeframe</span>
-            <div className="flex items-center gap-1">
-              {TIMEFRAMES.map((tf) => (
-                <button
-                  key={tf.value}
-                  onClick={() => setTimeframe(tf.value)}
-                  className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                    timeframe === tf.value
-                      ? 'bg-indigo-600 text-white'
-                      : 'bg-white/5 text-gray-400 hover:bg-white/10'
-                  }`}
-                >
-                  {tf.label}
-                </button>
-              ))}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex flex-wrap items-center gap-4">
+            <div>
+              <span className="text-xs font-semibold text-gray-500 block mb-2">Time Period Filter</span>
+              <div className="flex items-center gap-1">
+                {TIMEFRAMES.map((tf) => (
+                  <button
+                    key={tf.value}
+                    onClick={() => setTimeframe(tf.value)}
+                    className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                      timeframe === tf.value
+                        ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-md shadow-indigo-500/20'
+                        : 'bg-white/5 text-gray-400 hover:bg-white/10'
+                    }`}
+                  >
+                    {tf.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="hidden md:block w-px h-8 bg-white/10 self-center"></div>
+
+            <div>
+              <span className="text-xs font-semibold text-gray-500 block mb-2">Channel Filter</span>
+              <div className="flex items-center gap-1 flex-wrap">
+                {CHANNELS.map((c) => (
+                  <button
+                    key={c.value}
+                    onClick={() => setChannel(c.value)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                      channel === c.value
+                        ? 'bg-indigo-600 text-white'
+                        : 'bg-white/5 text-gray-400 hover:bg-white/10'
+                    }`}
+                  >
+                    {c.label}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 
-          <div className="hidden md:block w-px h-8 bg-white/10 self-center"></div>
-
-          <div>
-            <span className="text-xs font-semibold text-gray-500 block mb-2">Channel</span>
-            <div className="flex items-center gap-1 flex-wrap">
-              {CHANNELS.map((c) => (
-                <button
-                  key={c.value}
-                  onClick={() => setChannel(c.value)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                    channel === c.value
-                      ? 'bg-indigo-600 text-white'
-                      : 'bg-white/5 text-gray-400 hover:bg-white/10'
-                  }`}
-                >
-                  {c.label}
-                </button>
-              ))}
-            </div>
+          {/* Chart View Toggle */}
+          <div className="flex items-center gap-1 bg-slate-900/80 p-1 rounded-xl border border-white/10 self-start md:self-auto">
+            <button
+              onClick={() => setActiveChartTab('both')}
+              className={`px-3 py-1 rounded-lg text-xs font-semibold cursor-pointer ${
+                activeChartTab === 'both' ? 'bg-indigo-600 text-white' : 'text-gray-400 hover:text-white'
+              }`}
+            >
+              All Visuals
+            </button>
+            <button
+              onClick={() => setActiveChartTab('pie')}
+              className={`px-3 py-1 rounded-lg text-xs font-semibold cursor-pointer ${
+                activeChartTab === 'pie' ? 'bg-indigo-600 text-white' : 'text-gray-400 hover:text-white'
+              }`}
+            >
+              Pie Chart
+            </button>
+            <button
+              onClick={() => setActiveChartTab('bar')}
+              className={`px-3 py-1 rounded-lg text-xs font-semibold cursor-pointer ${
+                activeChartTab === 'bar' ? 'bg-indigo-600 text-white' : 'text-gray-400 hover:text-white'
+              }`}
+            >
+              Bar Chart
+            </button>
           </div>
         </div>
       </div>
 
-      {/* CSAT & Net Sentiment Meters */}
+      {/* CSAT & Net Sentiment Metric Meters */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         <div className="glass-panel p-6 space-y-3">
           <div className="flex items-center justify-between">
@@ -294,7 +317,7 @@ export default function AnalysisPage() {
             ></div>
           </div>
           <p className="text-xs text-gray-400">
-            Based on {total} analyzed feedback items · Positive share of total sentiment
+            Based on {total} analyzed feedback items in {timeframe === '7d' ? 'Past 7 Days' : timeframe === '30d' ? 'Past 30 Days' : 'All Time'}
           </p>
         </div>
 
@@ -324,42 +347,176 @@ export default function AnalysisPage() {
             ></div>
           </div>
           <p className="text-xs text-gray-400">
-            Positive vs Negative ratio · Range -100 to +100
+            Positive vs Negative score spread · Range -100 to +100
           </p>
         </div>
       </div>
 
-      {/* Sentiment Distribution Bar */}
-      <div className="glass-panel p-6 space-y-6">
-        <div className="flex items-center justify-between">
-          <h2 className="text-base font-bold text-white">Sentiment Distribution</h2>
-          <span className="text-xs text-gray-400">{total} items analyzed</span>
-        </div>
+      {/* Visual Charts Grid: Interactive Pie Chart & Response Trend Bar Chart */}
+      {(activeChartTab === 'both' || activeChartTab === 'pie' || activeChartTab === 'bar') && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* 🥧 1. Interactive Pie / Donut Chart */}
+          {(activeChartTab === 'both' || activeChartTab === 'pie') && (
+            <div className="glass-panel p-6 space-y-6 flex flex-col justify-between">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-base font-bold text-white flex items-center gap-2">
+                    <span>🥧 Sentiment Distribution Pie Chart</span>
+                  </h2>
+                  <p className="text-xs text-gray-400 mt-0.5">
+                    Breakdown for {timeframe === '7d' ? 'Past 7 Days' : timeframe === '30d' ? 'Past 30 Days' : 'All Time'} ({total} feedbacks)
+                  </p>
+                </div>
+                <span className="px-2.5 py-1 rounded-md text-[11px] font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+                  {timeframe.toUpperCase()}
+                </span>
+              </div>
 
-        <div className="h-4 w-full bg-slate-800 rounded-full overflow-hidden flex shadow-inner">
-          <div style={{ width: `${posPct}%` }} className="bg-emerald-500 transition-all duration-500"></div>
-          <div style={{ width: `${neuPct}%` }} className="bg-amber-500 transition-all duration-500"></div>
-          <div style={{ width: `${negPct}%` }} className="bg-rose-500 transition-all duration-500"></div>
-        </div>
+              {/* Pie/Donut Chart SVG Graphic */}
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-8 py-4">
+                <div className="relative w-44 h-44 flex items-center justify-center">
+                  <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+                    {/* Background Ring */}
+                    <circle cx="50" cy="50" r="40" stroke="#1e293b" strokeWidth="16" fill="transparent" />
 
-        <div className="grid grid-cols-3 gap-4">
-          <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-center">
-            <span className="text-xs text-gray-400 block">Positive</span>
-            <span className="text-xl font-bold text-emerald-400">{totalCounts.POS}</span>
-            <span className="text-xs text-emerald-300/70 block">({posPct}%)</span>
-          </div>
-          <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-center">
-            <span className="text-xs text-gray-400 block">Neutral</span>
-            <span className="text-xl font-bold text-amber-400">{totalCounts.NEU}</span>
-            <span className="text-xs text-amber-300/70 block">({neuPct}%)</span>
-          </div>
-          <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-center">
-            <span className="text-xs text-gray-400 block">Negative</span>
-            <span className="text-xl font-bold text-rose-400">{totalCounts.NEG}</span>
-            <span className="text-xs text-rose-300/70 block">({negPct}%)</span>
-          </div>
+                    {/* Positive Segment (Emerald) */}
+                    <circle
+                      cx="50"
+                      cy="50"
+                      r="40"
+                      stroke="#10b981"
+                      strokeWidth="16"
+                      fill="transparent"
+                      strokeDasharray={`${posStroke} ${circumference}`}
+                      strokeDashoffset="0"
+                      className="transition-all duration-700 hover:opacity-80"
+                    />
+
+                    {/* Neutral Segment (Amber) */}
+                    <circle
+                      cx="50"
+                      cy="50"
+                      r="40"
+                      stroke="#f59e0b"
+                      strokeWidth="16"
+                      fill="transparent"
+                      strokeDasharray={`${neuStroke} ${circumference}`}
+                      strokeDashoffset={`-${posStroke}`}
+                      className="transition-all duration-700 hover:opacity-80"
+                    />
+
+                    {/* Negative Segment (Rose) */}
+                    <circle
+                      cx="50"
+                      cy="50"
+                      r="40"
+                      stroke="#f43f5e"
+                      strokeWidth="16"
+                      fill="transparent"
+                      strokeDasharray={`${negStroke} ${circumference}`}
+                      strokeDashoffset={`-${posStroke + neuStroke}`}
+                      className="transition-all duration-700 hover:opacity-80"
+                    />
+                  </svg>
+                  {/* Center Stat Callout */}
+                  <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+                    <span className="text-2xl font-extrabold text-white">{data?.csat ?? 0}%</span>
+                    <span className="text-[10px] text-emerald-400 font-bold uppercase tracking-wider">CSAT Score</span>
+                  </div>
+                </div>
+
+                {/* Pie Chart Legend */}
+                <div className="space-y-3 w-full sm:w-auto">
+                  <div className="flex items-center justify-between gap-6 p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
+                    <div className="flex items-center gap-2">
+                      <span className="w-3 h-3 rounded-full bg-emerald-500"></span>
+                      <span className="text-xs font-semibold text-gray-200">Positive 😊</span>
+                    </div>
+                    <span className="text-xs font-extrabold text-emerald-300">
+                      {totalCounts.POS} ({posPct}%)
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between gap-6 p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20">
+                    <div className="flex items-center gap-2">
+                      <span className="w-3 h-3 rounded-full bg-amber-500"></span>
+                      <span className="text-xs font-semibold text-gray-200">Neutral 😐</span>
+                    </div>
+                    <span className="text-xs font-extrabold text-amber-300">
+                      {totalCounts.NEU} ({neuPct}%)
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between gap-6 p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/20">
+                    <div className="flex items-center gap-2">
+                      <span className="w-3 h-3 rounded-full bg-rose-500"></span>
+                      <span className="text-xs font-semibold text-gray-200">Negative 🔴</span>
+                    </div>
+                    <span className="text-xs font-extrabold text-rose-300">
+                      {totalCounts.NEG} ({negPct}%)
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* 📊 2. Interactive Feedback Volume & Response Trend Bar Chart */}
+          {(activeChartTab === 'both' || activeChartTab === 'bar') && (
+            <div className="glass-panel p-6 space-y-6 flex flex-col justify-between">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-base font-bold text-white flex items-center gap-2">
+                    <span>📊 Feedback Response Trend Bar Chart</span>
+                  </h2>
+                  <p className="text-xs text-gray-400 mt-0.5">
+                    Daily sentiment response volume over the {timeframe === '7d' ? 'Past 7 Days' : 'Past 30 Days'}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 text-[10px] font-semibold">
+                  <span className="flex items-center gap-1 text-emerald-400"><span className="w-2 h-2 rounded bg-emerald-500"></span> POS</span>
+                  <span className="flex items-center gap-1 text-amber-400"><span className="w-2 h-2 rounded bg-amber-500"></span> NEU</span>
+                  <span className="flex items-center gap-1 text-rose-400"><span className="w-2 h-2 rounded bg-rose-500"></span> NEG</span>
+                </div>
+              </div>
+
+              {/* Bar Chart Container */}
+              <div className="h-48 w-full flex items-end justify-between gap-1 sm:gap-2 pt-6 border-b border-white/10 px-1">
+                {trendPoints.slice(-14).map((pt, idx) => {
+                  const barHeightPct = Math.max(8, Math.round((pt.total / maxTrendVal) * 100));
+                  const posPctBar = pt.total > 0 ? (pt.pos / pt.total) * 100 : 0;
+                  const neuPctBar = pt.total > 0 ? (pt.neu / pt.total) * 100 : 0;
+                  const negPctBar = pt.total > 0 ? (pt.neg / pt.total) * 100 : 0;
+
+                  return (
+                    <div key={idx} className="flex-1 flex flex-col items-center gap-2 group h-full justify-end relative">
+                      {/* Tooltip on hover */}
+                      <div className="absolute -top-10 opacity-0 group-hover:opacity-100 transition-opacity bg-slate-900 text-white text-[10px] p-1.5 rounded border border-white/20 z-10 pointer-events-none whitespace-nowrap font-mono shadow-lg">
+                        {pt.date}: {pt.total} items ({pt.pos} pos / {pt.neg} neg)
+                      </div>
+
+                      {/* Stacked Bar */}
+                      <div
+                        className="w-full max-w-[28px] rounded-t-md overflow-hidden flex flex-col justify-end transition-all duration-500 group-hover:brightness-125"
+                        style={{ height: `${barHeightPct}%` }}
+                      >
+                        <div style={{ height: `${posPctBar}%` }} className="bg-emerald-500 w-full"></div>
+                        <div style={{ height: `${neuPctBar}%` }} className="bg-amber-500 w-full"></div>
+                        <div style={{ height: `${negPctBar}%` }} className="bg-rose-500 w-full"></div>
+                      </div>
+
+                      {/* Date Axis Label */}
+                      <span className="text-[10px] text-gray-500 font-mono truncate w-full text-center">
+                        {pt.date.split(' ')[1] || pt.date}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
-      </div>
+      )}
 
       {/* Keyword Drivers Matrix */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -483,7 +640,7 @@ export default function AnalysisPage() {
         </div>
       </div>
 
-      {/* Risk Flags */}
+      {/* Critical Risk Flags */}
       <div className="glass-panel p-6 space-y-4 border-rose-500/20">
         <div className="flex items-center gap-2">
           <span className="text-lg">🚨</span>

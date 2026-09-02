@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import CSVUploadModal from '@/app/components/CSVUploadModal';
+import FeedbackReviewModal from '@/app/components/FeedbackReviewModal';
 
 type FeedbackTheme = {
   theme: {
@@ -132,6 +133,8 @@ export default function InboxPage() {
     return matchesSearch && matchesChannel && matchesStatus && matchesSentiment;
   });
 
+  const [selectedReviewItem, setSelectedReviewItem] = useState<Feedback | null>(null);
+
   return (
     <div className="p-6 md:p-8 max-w-7xl mx-auto w-full space-y-8 animate-fadeIn">
       {/* Header Bar */}
@@ -141,7 +144,7 @@ export default function InboxPage() {
             <span>Feedback Inbox</span>
           </h1>
           <p className="text-gray-400 text-sm mt-1">
-            Centralized hub for managing customer reviews, support notes, NPS surveys, and auto-extracted themes.
+            Centralized hub for managing customer reviews, support notes, NPS surveys, and auto-extracted themes. Click any feedback card to open AI review card.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
@@ -349,7 +352,8 @@ export default function InboxPage() {
           {filteredItems.map((item) => (
             <div
               key={item.id}
-              className="glass-panel p-5 space-y-3 hover:border-white/20 transition-all flex flex-col md:flex-row md:items-start justify-between gap-4"
+              onClick={() => setSelectedReviewItem(item)}
+              className="glass-panel p-5 space-y-3 hover:border-indigo-500/50 hover:bg-white/[0.04] transition-all flex flex-col md:flex-row md:items-start justify-between gap-4 cursor-pointer group"
             >
               <div className="space-y-2 flex-1">
                 {/* Meta Bar */}
@@ -377,6 +381,10 @@ export default function InboxPage() {
                       🔗 {item.sourceRef}
                     </span>
                   )}
+
+                  <span className="text-[10px] text-indigo-400 font-semibold opacity-0 group-hover:opacity-100 transition-opacity ml-auto">
+                    🔍 Click for AI Auto-Analysis →
+                  </span>
                 </div>
 
                 {/* Main Text Content */}
@@ -404,7 +412,10 @@ export default function InboxPage() {
               </div>
 
               {/* Status Switcher & Date */}
-              <div className="flex md:flex-col items-center md:items-end justify-between gap-2 self-stretch md:self-auto border-t md:border-t-0 border-white/10 pt-3 md:pt-0">
+              <div
+                onClick={(e) => e.stopPropagation()}
+                className="flex md:flex-col items-center md:items-end justify-between gap-2 self-stretch md:self-auto border-t md:border-t-0 border-white/10 pt-3 md:pt-0"
+              >
                 <span className="text-[11px] text-gray-500 font-mono">
                   {new Date(item.createdAt).toLocaleDateString()}
                 </span>
@@ -443,6 +454,17 @@ export default function InboxPage() {
           load();
         }}
       />
+
+      {/* Interactive AI Feedback Review Modal Card */}
+      {selectedReviewItem && (
+        <FeedbackReviewModal
+          feedback={selectedReviewItem}
+          onClose={() => setSelectedReviewItem(null)}
+          onUpdate={() => {
+            load();
+          }}
+        />
+      )}
     </div>
   );
 }
