@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import FeedbackReviewModal from './FeedbackReviewModal';
 
 const CHANNELS = [
   { value: 'support_ticket', label: 'Support Ticket' },
@@ -17,8 +18,10 @@ export default function FeedbackModal() {
   const [customerLabel, setCustomerLabel] = useState('');
   const [sourceRef, setSourceRef] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
+
+  // State to hold newly created feedback for instant AI Review Card display
+  const [createdFeedback, setCreatedFeedback] = useState<any | null>(null);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -42,14 +45,14 @@ export default function FeedbackModal() {
         return;
       }
 
-      setSuccess(true);
+      const newFeedback = await res.json();
       setContent('');
       setCustomerLabel('');
       setSourceRef('');
-      setTimeout(() => {
-        setSuccess(false);
-        setIsOpen(false);
-      }, 1500);
+      setIsOpen(false);
+
+      // Instantly open the AI Review Card Modal with the new feedback item
+      setCreatedFeedback(newFeedback);
     } catch (e) {
       setError('An error occurred while submitting feedback.');
     } finally {
@@ -91,91 +94,91 @@ export default function FeedbackModal() {
               </button>
             </div>
 
-            {/* Success Toast */}
-            {success ? (
-              <div className="p-6 text-center space-y-2 animate-fadeIn">
-                <span className="text-4xl">✨</span>
-                <h4 className="text-base font-bold text-emerald-400">Feedback Submitted & AI Analyzed!</h4>
-                <p className="text-xs text-gray-300">Your feedback has been added and assigned a sentiment score.</p>
+            {/* Feedback Form */}
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label className="text-xs font-semibold text-gray-400 block mb-1">
+                  Feedback Content <span className="text-rose-400">*</span>
+                </label>
+                <textarea
+                  rows={4}
+                  className="glass-input w-full text-sm"
+                  placeholder="Enter customer review, support ticket message, or feature request..."
+                  value={content}
+                  onChange={(e) => setContent(e.target.value)}
+                  required
+                />
               </div>
-            ) : (
-              /* Feedback Form */
-              <form onSubmit={handleSubmit} className="space-y-4">
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="text-xs font-semibold text-gray-400 block mb-1">
-                    Feedback Content <span className="text-rose-400">*</span>
-                  </label>
-                  <textarea
-                    rows={4}
-                    className="glass-input w-full text-sm"
-                    placeholder="Enter customer review, support ticket message, or feature request..."
-                    value={content}
-                    onChange={(e) => setContent(e.target.value)}
-                    required
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-xs font-semibold text-gray-400 block mb-1">Feedback Channel</label>
-                    <select
-                      className="glass-input w-full text-sm cursor-pointer"
-                      value={channel}
-                      onChange={(e) => setChannel(e.target.value)}
-                    >
-                      {CHANNELS.map((c) => (
-                        <option key={c.value} value={c.value} className="bg-slate-900 text-white">
-                          {c.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="text-xs font-semibold text-gray-400 block mb-1">Customer / Account Label</label>
-                    <input
-                      type="text"
-                      className="glass-input w-full text-sm"
-                      placeholder="e.g. Acme Corp (Enterprise)"
-                      value={customerLabel}
-                      onChange={(e) => setCustomerLabel(e.target.value)}
-                    />
-                  </div>
+                  <label className="text-xs font-semibold text-gray-400 block mb-1">Feedback Channel</label>
+                  <select
+                    className="glass-input w-full text-sm cursor-pointer"
+                    value={channel}
+                    onChange={(e) => setChannel(e.target.value)}
+                  >
+                    {CHANNELS.map((c) => (
+                      <option key={c.value} value={c.value} className="bg-slate-900 text-white">
+                        {c.label}
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
                 <div>
-                  <label className="text-xs font-semibold text-gray-400 block mb-1">Source Reference (Optional)</label>
+                  <label className="text-xs font-semibold text-gray-400 block mb-1">Customer / Account Label</label>
                   <input
                     type="text"
                     className="glass-input w-full text-sm"
-                    placeholder="e.g. Ticket #4082 / AppStore Review"
-                    value={sourceRef}
-                    onChange={(e) => setSourceRef(e.target.value)}
+                    placeholder="e.g. Acme Corp (Enterprise)"
+                    value={customerLabel}
+                    onChange={(e) => setCustomerLabel(e.target.value)}
                   />
                 </div>
+              </div>
 
-                {error && <p className="text-xs text-rose-400 font-medium">{error}</p>}
+              <div>
+                <label className="text-xs font-semibold text-gray-400 block mb-1">Source Reference (Optional)</label>
+                <input
+                  type="text"
+                  className="glass-input w-full text-sm"
+                  placeholder="e.g. Ticket #4082 / AppStore Review"
+                  value={sourceRef}
+                  onChange={(e) => setSourceRef(e.target.value)}
+                />
+              </div>
 
-                <div className="flex justify-end gap-3 pt-3 border-t border-white/10">
-                  <button
-                    type="button"
-                    onClick={() => setIsOpen(false)}
-                    className="px-4 py-2 rounded-lg text-sm text-gray-400 hover:text-white"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={submitting}
-                    className="px-5 py-2.5 rounded-lg text-sm font-semibold bg-gradient-to-r from-indigo-500 to-purple-600 hover:opacity-90 text-white shadow-md shadow-indigo-500/20 disabled:opacity-50 cursor-pointer flex items-center gap-2"
-                  >
-                    {submitting ? 'Submitting...' : '✨ Submit & Auto-Analyze'}
-                  </button>
-                </div>
-              </form>
-            )}
+              {error && <p className="text-xs text-rose-400 font-medium">{error}</p>}
+
+              <div className="flex justify-end gap-3 pt-3 border-t border-white/10">
+                <button
+                  type="button"
+                  onClick={() => setIsOpen(false)}
+                  className="px-4 py-2 rounded-lg text-sm text-gray-400 hover:text-white"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="px-5 py-2.5 rounded-lg text-sm font-semibold bg-gradient-to-r from-indigo-500 to-purple-600 hover:opacity-90 text-white shadow-md shadow-indigo-500/20 disabled:opacity-50 cursor-pointer flex items-center gap-2"
+                >
+                  {submitting ? '✨ Gemini AI Analyzing...' : '✨ Submit & Auto-Analyze'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
+      )}
+
+      {/* Pop up AI Review Card Modal instantly when feedback is submitted */}
+      {createdFeedback && (
+        <FeedbackReviewModal
+          feedback={createdFeedback}
+          onClose={() => setCreatedFeedback(null)}
+          onUpdate={() => setCreatedFeedback(null)}
+        />
       )}
     </>
   );

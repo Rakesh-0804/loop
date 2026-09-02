@@ -91,11 +91,15 @@ export default function InboxPage() {
       return;
     }
 
+    const newFeedback = await res.json();
     setContent('');
     setCustomerLabel('');
     setSourceRef('');
     setShowAddForm(false);
-    load();
+    await load();
+
+    // Pop up AI Review Card Modal instantly for the new feedback item
+    setSelectedReviewItem(newFeedback);
   }
 
   async function handleAutoAnalyze() {
