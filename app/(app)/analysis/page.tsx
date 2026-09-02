@@ -192,9 +192,6 @@ export default function AnalysisPage() {
   const neuStroke = (neuPct / 100) * circumference;
   const negStroke = (negPct / 100) * circumference;
 
-  const neuOffset = circumference - posStroke;
-  const negOffset = circumference - (posStroke + neuStroke);
-
   const trendPoints = data?.trendData || [];
   const maxTrendVal = Math.max(1, ...trendPoints.map((t) => t.total));
 
@@ -301,6 +298,68 @@ export default function AnalysisPage() {
             </button>
           </div>
         </div>
+      </div>
+
+      {/* 🚨 CRITICAL RISK FLAGS (MOVED TO TOP OF PAGE) */}
+      <div className="glass-panel p-6 space-y-4 border-rose-500/30 bg-rose-500/[0.03] shadow-lg shadow-rose-500/5">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="text-xl">🚨</span>
+            <h2 className="text-base font-bold text-white">Critical Risk Flags & Churn Monitor</h2>
+            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase bg-rose-500/20 text-rose-300 border border-rose-500/30">
+              High Priority Priority Alert
+            </span>
+          </div>
+          <span className="text-xs text-gray-400 font-mono">
+            {data?.riskFlags.length || 0} active flags detected
+          </span>
+        </div>
+
+        {data?.riskFlags.length ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {data.riskFlags.map((flag) => (
+              <div
+                key={flag.type}
+                className={`p-4 rounded-xl border flex items-start gap-3 transition-all hover:scale-[1.01] ${
+                  flag.severity === 'HIGH'
+                    ? 'bg-rose-500/10 border-rose-500/40 shadow-md shadow-rose-500/10'
+                    : flag.severity === 'MEDIUM'
+                    ? 'bg-amber-500/10 border-amber-500/40'
+                    : 'bg-yellow-500/10 border-yellow-500/40'
+                }`}
+              >
+                <span className="text-2xl p-1 bg-black/20 rounded-lg">{RISK_ICONS[flag.type] || '⚠️'}</span>
+                <div className="flex-1 space-y-1">
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
+                    <span className="text-xs font-extrabold text-white capitalize">
+                      {flag.type.replace(/_/g, ' ')}
+                    </span>
+                    <span
+                      className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase ${
+                        flag.severity === 'HIGH'
+                          ? 'bg-rose-500/30 text-rose-300 border border-rose-500/40'
+                          : flag.severity === 'MEDIUM'
+                          ? 'bg-amber-500/30 text-amber-300 border border-amber-500/40'
+                          : 'bg-yellow-500/30 text-yellow-300 border border-yellow-500/40'
+                      }`}
+                    >
+                      {flag.severity}
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-300 leading-snug">{flag.description}</p>
+                  <div className="flex items-center justify-between pt-1 text-[11px] text-gray-400 font-mono">
+                    <span>Channel: {CHANNEL_LABELS[flag.channel] || flag.channel}</span>
+                    <span className="text-rose-300 font-bold">{flag.count} items</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm text-gray-400 py-3 text-center flex items-center justify-center gap-2">
+            <span>✅</span> No critical risk flags detected in current selection. System operating normally.
+          </p>
+        )}
       </div>
 
       {/* CSAT & Net Sentiment Metric Meters */}
@@ -638,62 +697,6 @@ export default function AnalysisPage() {
             </div>
           )}
         </div>
-      </div>
-
-      {/* Critical Risk Flags */}
-      <div className="glass-panel p-6 space-y-4 border-rose-500/20">
-        <div className="flex items-center gap-2">
-          <span className="text-lg">🚨</span>
-          <h2 className="text-base font-bold text-white">Critical Risk Flags</h2>
-          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-rose-500/20 text-rose-300 border border-rose-500/30">
-            Urgency Monitor
-          </span>
-        </div>
-
-        {data?.riskFlags.length ? (
-          <div className="space-y-3">
-            {data.riskFlags.map((flag) => (
-              <div
-                key={flag.type}
-                className={`p-4 rounded-xl border flex items-start gap-3 ${
-                  flag.severity === 'HIGH'
-                    ? 'bg-rose-500/10 border-rose-500/40'
-                    : flag.severity === 'MEDIUM'
-                    ? 'bg-amber-500/10 border-amber-500/40'
-                    : 'bg-yellow-500/10 border-yellow-500/40'
-                }`}
-              >
-                <span className="text-xl">{RISK_ICONS[flag.type] || '⚠️'}</span>
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-sm font-bold text-white capitalize">
-                      {flag.type.replace(/_/g, ' ')}
-                    </span>
-                    <span
-                      className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
-                        flag.severity === 'HIGH'
-                          ? 'bg-rose-500/30 text-rose-300'
-                          : flag.severity === 'MEDIUM'
-                          ? 'bg-amber-500/30 text-amber-300'
-                          : 'bg-yellow-500/30 text-yellow-300'
-                      }`}
-                    >
-                      {flag.severity}
-                    </span>
-                  </div>
-                  <p className="text-xs text-gray-300 mt-1">{flag.description}</p>
-                  <p className="text-[11px] text-gray-500 mt-1">
-                    Affected items: {flag.count} · Channel: {CHANNEL_LABELS[flag.channel] || flag.channel}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <p className="text-sm text-gray-400 py-4 text-center flex items-center justify-center gap-2">
-            <span>✅</span> No critical risk flags detected in the current selection.
-          </p>
-        )}
       </div>
     </div>
   );
