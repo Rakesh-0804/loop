@@ -194,3 +194,32 @@ export async function PATCH(req: Request) {
 
   return NextResponse.json({ error: 'Feedback record not found' }, { status: 404 });
 }
+
+export async function DELETE() {
+  const session = await auth();
+  if (!session?.user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const sessionUser = session.user as { workspaceId?: string; role?: string };
+  const workspaceId = sessionUser.workspaceId || 'cmu001ws0000001';
+
+  try {
+    await prisma.feedbackTheme.deleteMany({
+      where: workspaceId ? { feedback: { workspaceId } } : {},
+    });
+
+    await prisma.feedback.deleteMany({
+      where: workspaceId ? { workspaceId } : {},
+    });
+
+    await prisma.report.deleteMany({
+      where: workspaceId ? { workspaceId } : {},
+    });
+
+    return NextResponse.json({ message: 'All workspace feedback records and reports cleared successfully' });
+  } catch (e) {
+    console.error('DELETE error:', e);
+    return NextResponse.json({ error: 'Failed to clear data' }, { status: 500 });
+  }
+}
