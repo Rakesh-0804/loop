@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import CSVUploadModal from '@/app/components/CSVUploadModal';
 import FeedbackReviewModal from '@/app/components/FeedbackReviewModal';
+import URLReviewAnalyzerModal from '@/app/components/URLReviewAnalyzerModal';
 
 type FeedbackTheme = {
   theme: {
@@ -50,6 +51,7 @@ export default function InboxPage() {
   const [analyzing, setAnalyzing] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
   const [showCSVModal, setShowCSVModal] = useState(false);
+  const [showURLModal, setShowURLModal] = useState(false);
 
   useEffect(() => {
     load();
@@ -172,6 +174,12 @@ export default function InboxPage() {
           >
             <span>🗑️</span>
             <span>Clear All Data</span>
+          </button>
+          <button
+            onClick={() => setShowURLModal(true)}
+            className="px-4 py-2.5 rounded-xl text-sm font-semibold bg-gradient-to-r from-cyan-600 to-indigo-600 hover:from-cyan-500 hover:to-indigo-500 text-white shadow-md shadow-cyan-500/20 transition-all flex items-center gap-2 cursor-pointer"
+          >
+            <span>🌐 Analyze Review URL</span>
           </button>
           <button
             onClick={() => setShowCSVModal(true)}
@@ -476,6 +484,14 @@ export default function InboxPage() {
         isOpen={showCSVModal}
         onClose={() => setShowCSVModal(false)}
         onSuccess={() => {
+          load();
+        }}
+      />
+
+      <URLReviewAnalyzerModal
+        isOpen={showURLModal}
+        onClose={() => setShowURLModal(false)}
+        onImportSuccess={() => {
           load();
         }}
       />
