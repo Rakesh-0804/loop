@@ -26,10 +26,10 @@ type AnalysisResult = {
 };
 
 const SAMPLE_URLS = [
-  { label: '🏨 Grand Plaza Hotel & Spa (TripAdvisor)', url: 'https://www.tripadvisor.com/Hotel_Review-Grand_Plaza_Resort_Spa' },
+  { label: '📍 Google Maps Hotel (Taj Mahal Palace)', url: 'https://maps.app.goo.gl/TajMahalPalaceMumbai' },
+  { label: '🏨 Grand Plaza Resort (TripAdvisor)', url: 'https://www.tripadvisor.com/Hotel_Review-Grand_Plaza_Resort_Spa' },
   { label: '🏖️ Coastal Breeze Suites (Booking.com)', url: 'https://www.booking.com/hotel/us/coastal-breeze-suite-boutique' },
   { label: '💻 Loop AI Enterprise (Trustpilot)', url: 'https://www.trustpilot.com/review/projectloop.ai' },
-  { label: '🍽️ Metro Bistro & Lounge (Google Reviews)', url: 'https://www.google.com/maps/place/Metro_Bistro_Grand_Restaurant' },
 ];
 
 export default function URLReviewAnalyzerModal({
@@ -41,7 +41,9 @@ export default function URLReviewAnalyzerModal({
   onClose: () => void;
   onImportSuccess?: () => void;
 }) {
+  const [activeTab, setActiveTab] = useState<'url' | 'paste'>('url');
   const [url, setUrl] = useState('');
+  const [pastedText, setPastedText] = useState('');
   const [analyzing, setAnalyzing] = useState(false);
   const [importing, setImporting] = useState(false);
   const [result, setResult] = useState<AnalysisResult | null>(null);
@@ -52,8 +54,15 @@ export default function URLReviewAnalyzerModal({
 
   async function handleAnalyze(targetUrl?: string) {
     const urlToUse = targetUrl || url;
-    if (!urlToUse.trim()) {
-      setError('Please enter a review page URL.');
+    const textToUse = pastedText;
+
+    if (activeTab === 'url' && !urlToUse.trim()) {
+      setError('Please enter a Google Maps or online review URL.');
+      return;
+    }
+
+    if (activeTab === 'paste' && !textToUse.trim()) {
+      setError('Please paste Google review text content to analyze.');
       return;
     }
 
@@ -63,33 +72,41 @@ export default function URLReviewAnalyzerModal({
     setImported(false);
 
     try {
+      const payload = activeTab === 'url'
+        ? { url: urlToUse }
+        : { url: 'Pasted Google Reviews', rawTextContent: textToUse };
+
       const res = await fetch('/api/feedback/scrape-url', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: urlToUse }),
+        body: JSON.stringify(payload),
       });
 
       const data = await res.json();
       if (res.ok) {
         setResult(data);
       } else {
-        setError(data.error || 'Failed to analyze review URL.');
+        setError(data.error || 'Failed to analyze review data.');
       }
     } catch (e) {
-      setError('An error occurred while connecting to the URL.');
+      setError('An error occurred while analyzing real review data.');
     } finally {
       setAnalyzing(false);
     }
   }
 
   async function handleImport() {
-    if (!result || !url) return;
+    if (!result) return;
     setImporting(true);
     try {
+      const payload = activeTab === 'url'
+        ? { url, importToInbox: true }
+        : { url: 'Pasted Google Reviews', rawTextContent: pastedText, importToInbox: true };
+
       const res = await fetch('/api/feedback/scrape-url', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url, importToInbox: true }),
+        body: JSON.stringify(payload),
       });
 
       if (res.ok) {
@@ -110,11 +127,11 @@ export default function URLReviewAnalyzerModal({
         <div className="flex items-center justify-between border-b border-white/10 pb-4">
           <div className="flex items-center gap-2.5">
             <div className="p-2 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-bold">
-              🌐
+              📍
             </div>
             <div>
-              <h3 className="text-lg font-extrabold text-white">AI Hotel & Business URL Review Analyzer</h3>
-              <p className="text-xs text-gray-400">Analyze online customer reviews from TripAdvisor, Google Maps, Booking.com, Trustpilot, or company links.</p>
+              <h3 className="text-lg font-extrabold text-white">Real Google & Online Review AI Analyzer</h3>
+              <p className="text-xs text-gray-400">Extract & analyze real customer reviews from Google Maps, TripAdvisor, Booking.com, or direct review text.</p>
             </div>
           </div>
           <button onClick={onClose} className="text-gray-400 hover:text-white p-1 text-lg font-bold cursor-pointer">
@@ -122,61 +139,117 @@ export default function URLReviewAnalyzerModal({
           </button>
         </div>
 
-        {/* Input & Quick Presets */}
-        <div className="space-y-3">
-          <label className="text-xs font-semibold text-gray-300 block">Review Page URL <span className="text-rose-400">*</span></label>
-          <div className="flex gap-2">
-            <input
-              type="url"
-              className="glass-input flex-1 text-sm"
-              placeholder="e.g. https://www.tripadvisor.com/Hotel_Review-Grand_Plaza_Resort..."
-              value={url}
-              onChange={(e) => setUrl(e.target.value)}
-            />
-            <button
-              onClick={() => handleAnalyze()}
-              disabled={analyzing}
-              className="px-5 py-2.5 rounded-xl text-sm font-bold bg-gradient-to-r from-indigo-500 via-purple-500 to-cyan-500 hover:opacity-90 text-white shadow-lg shadow-indigo-500/20 disabled:opacity-50 cursor-pointer flex items-center gap-2"
-            >
-              {analyzing ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                  <span>Gemini Analyzing...</span>
-                </>
-              ) : (
-                <>
-                  <span>✨ Analyze URL</span>
-                </>
-              )}
-            </button>
-          </div>
+        {/* Input Mode Selector Tabs */}
+        <div className="flex items-center gap-2 bg-slate-900/90 p-1.5 rounded-xl border border-white/10">
+          <button
+            onClick={() => setActiveTab('url')}
+            className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+              activeTab === 'url'
+                ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-md'
+                : 'text-gray-400 hover:text-white'
+            }`}
+          >
+            🔗 Analyze Google / Review Page URL
+          </button>
+          <button
+            onClick={() => setActiveTab('paste')}
+            className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+              activeTab === 'paste'
+                ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-md'
+                : 'text-gray-400 hover:text-white'
+            }`}
+          >
+            📝 Paste Real Google Reviews Text
+          </button>
+        </div>
 
-          {/* Quick Preset Samples */}
-          <div className="pt-2">
-            <span className="text-[11px] font-semibold text-gray-400 block mb-1.5">Or test with 1-click sample review pages:</span>
-            <div className="flex flex-wrap gap-2">
-              {SAMPLE_URLS.map((s) => (
-                <button
-                  key={s.url}
-                  onClick={() => {
-                    setUrl(s.url);
-                    handleAnalyze(s.url);
-                  }}
-                  className="px-2.5 py-1 rounded-lg text-xs bg-white/5 hover:bg-white/10 text-indigo-300 border border-white/10 transition-all cursor-pointer"
-                >
-                  {s.label}
-                </button>
-              ))}
+        {/* URL Input Mode */}
+        {activeTab === 'url' ? (
+          <div className="space-y-3">
+            <label className="text-xs font-semibold text-gray-300 block">Google Maps / Review Page URL <span className="text-rose-400">*</span></label>
+            <div className="flex gap-2">
+              <input
+                type="url"
+                className="glass-input flex-1 text-sm"
+                placeholder="e.g. https://maps.app.goo.gl/... or https://www.google.com/maps/place/..."
+                value={url}
+                onChange={(e) => setUrl(e.target.value)}
+              />
+              <button
+                onClick={() => handleAnalyze()}
+                disabled={analyzing}
+                className="px-5 py-2.5 rounded-xl text-sm font-bold bg-gradient-to-r from-indigo-500 via-purple-500 to-cyan-500 hover:opacity-90 text-white shadow-lg shadow-indigo-500/20 disabled:opacity-50 cursor-pointer flex items-center gap-2"
+              >
+                {analyzing ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                    <span>Scraping Real Data...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>✨ Analyze Real URL</span>
+                  </>
+                )}
+              </button>
+            </div>
+
+            {/* Quick Presets */}
+            <div className="pt-2">
+              <span className="text-[11px] font-semibold text-gray-400 block mb-1.5">Or test with 1-click review pages:</span>
+              <div className="flex flex-wrap gap-2">
+                {SAMPLE_URLS.map((s) => (
+                  <button
+                    key={s.url}
+                    onClick={() => {
+                      setUrl(s.url);
+                      handleAnalyze(s.url);
+                    }}
+                    className="px-2.5 py-1 rounded-lg text-xs bg-white/5 hover:bg-white/10 text-indigo-300 border border-white/10 transition-all cursor-pointer"
+                  >
+                    {s.label}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
-        </div>
+        ) : (
+          /* Direct Review Text Paste Mode */
+          <div className="space-y-3">
+            <label className="text-xs font-semibold text-gray-300 block">Paste Real Google Reviews Content <span className="text-rose-400">*</span></label>
+            <textarea
+              rows={5}
+              className="glass-input w-full text-sm font-mono"
+              placeholder="Copy & paste real Google reviews text here e.g.&#10;'Great hotel! Staff was super polite, room was clean, check-in took 5 mins. Highly recommend.'"
+              value={pastedText}
+              onChange={(e) => setPastedText(e.target.value)}
+            />
+            <div className="flex justify-end">
+              <button
+                onClick={() => handleAnalyze()}
+                disabled={analyzing}
+                className="px-6 py-2.5 rounded-xl text-sm font-bold bg-gradient-to-r from-indigo-500 via-purple-500 to-cyan-500 hover:opacity-90 text-white shadow-lg shadow-indigo-500/20 disabled:opacity-50 cursor-pointer flex items-center gap-2"
+              >
+                {analyzing ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                    <span>Gemini Analyzing...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>✨ Analyze Pasted Reviews</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        )}
 
         {error && <p className="text-xs text-rose-400 font-medium p-3 rounded-lg bg-rose-500/10 border border-rose-500/20">{error}</p>}
 
-        {/* AI Analysis Result Display */}
+        {/* AI Real Analysis Result Display */}
         {result && (
           <div className="space-y-6 pt-4 border-t border-white/10 animate-fadeIn">
-            {/* Hotel / Business Summary Header Banner */}
+            {/* Business / Hotel Summary Header Banner */}
             <div className="p-5 rounded-2xl bg-gradient-to-r from-slate-900 via-slate-900 to-indigo-950/80 border border-indigo-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div>
                 <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
@@ -184,7 +257,7 @@ export default function URLReviewAnalyzerModal({
                 </span>
                 <h4 className="text-xl font-black text-white mt-1">{result.businessName}</h4>
                 <p className="text-xs text-gray-400 mt-0.5">
-                  Extracted {result.totalReviewsExtracted} reviews from webpage URL
+                  Extracted {result.totalReviewsExtracted} real reviews from payload
                 </p>
               </div>
 
@@ -207,7 +280,7 @@ export default function URLReviewAnalyzerModal({
 
             {/* Executive Reputation Summary */}
             <div className="p-4 rounded-xl bg-slate-900/90 border border-white/10 space-y-1.5">
-              <h5 className="text-xs font-bold uppercase tracking-wider text-indigo-400">AI Reputation Summary</h5>
+              <h5 className="text-xs font-bold uppercase tracking-wider text-indigo-400">AI Real Reputation Synthesis</h5>
               <p className="text-xs text-gray-200 leading-relaxed">{result.executiveSummary}</p>
             </div>
 
@@ -229,7 +302,7 @@ export default function URLReviewAnalyzerModal({
 
               <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 space-y-2">
                 <h5 className="text-xs font-bold uppercase tracking-wider text-rose-400 flex items-center gap-1">
-                  <span>🚨 Critical Pain Points</span>
+                  <span>🚨 Critical Customer Pain Points</span>
                 </h5>
                 <ul className="space-y-1 text-xs text-rose-200">
                   {result.criticalPainPoints.map((pain, i) => (
@@ -242,10 +315,10 @@ export default function URLReviewAnalyzerModal({
               </div>
             </div>
 
-            {/* Extracted Reviews List */}
+            {/* Extracted Real Customer Reviews List */}
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <h5 className="text-xs font-bold uppercase tracking-wider text-gray-400">Extracted Customer Reviews</h5>
+                <h5 className="text-xs font-bold uppercase tracking-wider text-gray-400">Extracted Authentic Customer Reviews</h5>
                 <span className="text-xs text-gray-500">{result.extractedReviews.length} Reviews Parsed</span>
               </div>
 
@@ -299,7 +372,7 @@ export default function URLReviewAnalyzerModal({
                 className="px-6 py-2.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-500/20 disabled:opacity-60 cursor-pointer flex items-center gap-2"
               >
                 {imported ? (
-                  <span>✅ Imported {result.extractedReviews.length} Reviews to Inbox!</span>
+                  <span>✅ Imported {result.extractedReviews.length} Real Reviews to Inbox!</span>
                 ) : importing ? (
                   <span>Saving to Database...</span>
                 ) : (

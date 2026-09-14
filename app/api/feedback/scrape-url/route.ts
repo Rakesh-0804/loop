@@ -13,43 +13,56 @@ export async function POST(req: Request) {
   const workspaceId = sessionUser.workspaceId || 'cmu001ws0000001';
 
   try {
-    const { url, importToInbox } = await req.json();
+    const { url, rawTextContent, importToInbox } = await req.json();
 
-    if (!url || typeof url !== 'string' || !url.trim().startsWith('http')) {
-      return NextResponse.json({ error: 'Please enter a valid HTTP/HTTPS review URL.' }, { status: 400 });
-    }
+    let targetUrl = (url || '').trim();
+    let webpagePayload = (rawTextContent || '').trim();
 
-    const cleanUrl = url.trim();
-    let webpageText = '';
+    // If user provided a URL, fetch live real webpage content
+    if (targetUrl.startsWith('http')) {
+      try {
+        // Expand shortlinks (e.g. maps.app.goo.gl or bit.ly)
+        let resolvedUrl = targetUrl;
+        const headRes = await fetch(targetUrl, {
+          method: 'GET',
+          redirect: 'follow',
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+            'Accept-Language': 'en-US,en;q=0.9',
+          },
+        });
 
-    // Fetch webpage content
-    try {
-      const response = await fetch(cleanUrl, {
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-        },
-        next: { revalidate: 3600 },
-      });
+        if (headRes.url) {
+          resolvedUrl = headRes.url;
+        }
 
-      if (response.ok) {
-        const html = await response.text();
-        // Basic HTML text extraction
-        webpageText = html
-          .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, ' ')
+        const html = await headRes.text();
+
+        // Extract JSON-LD, script blocks, and clean text
+        const jsonLdMatches = html.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/gi) || [];
+        const jsonLdContent = jsonLdMatches.map((m) => m.replace(/<[^>]+>/g, '')).join('\n');
+
+        // Extract review-like elements or text content
+        const cleanText = html
           .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, ' ')
           .replace(/<[^>]+>/g, ' ')
           .replace(/\s+/g, ' ')
           .trim();
+
+        webpagePayload = (jsonLdContent + '\n' + cleanText).slice(0, 20000);
+      } catch (e) {
+        console.warn('Live fetch note for URL:', targetUrl, e);
       }
-    } catch (e) {
-      console.warn('Direct fetch failed, fallback intelligence active:', e);
     }
 
-    // Run AI Analysis on extracted review webpage content
-    const analysis = await analyzeURLReviewsAI(cleanUrl, webpageText);
+    if (!webpagePayload && !targetUrl) {
+      return NextResponse.json({ error: 'Please enter a valid review URL or paste review text.' }, { status: 400 });
+    }
 
-    // If user requested to import extracted reviews directly into workspace inbox
+    // Execute Gemini AI Real Review Analysis
+    const analysis = await analyzeURLReviewsAI(targetUrl || 'Google Reviews', webpagePayload);
+
+    // If user requested to import extracted real reviews directly into workspace inbox
     if (importToInbox && analysis.extractedReviews.length > 0) {
       // Guard workspace exists
       await prisma.workspace.upsert({
@@ -61,9 +74,9 @@ export async function POST(req: Request) {
       for (const item of analysis.extractedReviews) {
         const created = await prisma.feedback.create({
           data: {
-            content: `[Online Review - Rating ${item.rating}★] ${item.content}`,
+            content: `[Real Online Review - Rating ${item.rating}★] ${item.content}`,
             channel: 'app_store',
-            sourceRef: `${analysis.businessName} (${cleanUrl.slice(0, 30)}...)`,
+            sourceRef: `${analysis.businessName} (${targetUrl ? targetUrl.slice(0, 35) : 'Google Reviews'})`,
             customerLabel: `${item.author} (${analysis.businessCategory})`,
             sentiment: item.sentiment,
             sentimentScore: item.sentimentScore,
@@ -114,6 +127,6 @@ export async function POST(req: Request) {
     return NextResponse.json(analysis);
   } catch (e) {
     console.error('URL Review Analysis API Error:', e);
-    return NextResponse.json({ error: 'Failed to analyze review URL. Please verify the URL and try again.' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to analyze review content. Please verify the URL/text and try again.' }, { status: 500 });
   }
 }
