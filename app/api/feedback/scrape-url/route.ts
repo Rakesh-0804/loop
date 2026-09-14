@@ -13,7 +13,7 @@ export async function POST(req: Request) {
   const workspaceId = sessionUser.workspaceId || 'cmu001ws0000001';
 
   try {
-    const { url, rawTextContent, importToInbox } = await req.json();
+    const { url, rawTextContent, customBusinessName, importToInbox } = await req.json();
 
     let targetUrl = (url || '').trim();
     let webpagePayload = (rawTextContent || '').trim();
@@ -62,6 +62,11 @@ export async function POST(req: Request) {
     // Execute Gemini AI Real Review Analysis
     const analysis = await analyzeURLReviewsAI(targetUrl || 'Google Reviews', webpagePayload);
 
+    // Override businessName if custom name specified by user
+    if (customBusinessName && typeof customBusinessName === 'string' && customBusinessName.trim().length > 0) {
+      analysis.businessName = customBusinessName.trim();
+    }
+
     // If user requested to import extracted real reviews directly into workspace inbox
     if (importToInbox && analysis.extractedReviews.length > 0) {
       // Guard workspace exists
@@ -74,10 +79,10 @@ export async function POST(req: Request) {
       for (const item of analysis.extractedReviews) {
         const created = await prisma.feedback.create({
           data: {
-            content: `[Real Online Review - Rating ${item.rating}★] ${item.content}`,
+            content: `[${analysis.businessName} Google Review - ${item.rating}★] ${item.content}`,
             channel: 'app_store',
-            sourceRef: `${analysis.businessName} (${targetUrl ? targetUrl.slice(0, 35) : 'Google Reviews'})`,
-            customerLabel: `${item.author} (${analysis.businessCategory})`,
+            sourceRef: `Google Reviews: ${analysis.businessName}`,
+            customerLabel: `${item.author} (${analysis.businessName})`,
             sentiment: item.sentiment,
             sentimentScore: item.sentimentScore,
             workspaceId,

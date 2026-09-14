@@ -26,10 +26,10 @@ type AnalysisResult = {
 };
 
 const SAMPLE_URLS = [
-  { label: '📍 Google Maps Hotel (Taj Mahal Palace)', url: 'https://maps.app.goo.gl/TajMahalPalaceMumbai' },
-  { label: '🏨 Grand Plaza Resort (TripAdvisor)', url: 'https://www.tripadvisor.com/Hotel_Review-Grand_Plaza_Resort_Spa' },
-  { label: '🏖️ Coastal Breeze Suites (Booking.com)', url: 'https://www.booking.com/hotel/us/coastal-breeze-suite-boutique' },
-  { label: '💻 Loop AI Enterprise (Trustpilot)', url: 'https://www.trustpilot.com/review/projectloop.ai' },
+  { label: '📍 Taj Mahal Palace Hotel (Google Maps)', url: 'https://maps.app.goo.gl/TajMahalPalaceMumbai', name: 'Taj Mahal Palace Hotel' },
+  { label: '🏨 Grand Plaza Resort (TripAdvisor)', url: 'https://www.tripadvisor.com/Hotel_Review-Grand_Plaza_Resort_Spa', name: 'Grand Plaza Resort & Spa' },
+  { label: '🏖️ Coastal Breeze Suites (Booking.com)', url: 'https://www.booking.com/hotel/us/coastal-breeze-suite-boutique', name: 'Coastal Breeze Boutique Resort' },
+  { label: '🍽️ Metro Bistro & Lounge (Google Reviews)', url: 'https://www.google.com/maps/place/Metro_Bistro_Grand_Restaurant', name: 'Metro Bistro & Lounge' },
 ];
 
 export default function URLReviewAnalyzerModal({
@@ -43,6 +43,7 @@ export default function URLReviewAnalyzerModal({
 }) {
   const [activeTab, setActiveTab] = useState<'url' | 'paste'>('url');
   const [url, setUrl] = useState('');
+  const [customBusinessName, setCustomBusinessName] = useState('');
   const [pastedText, setPastedText] = useState('');
   const [analyzing, setAnalyzing] = useState(false);
   const [importing, setImporting] = useState(false);
@@ -52,8 +53,9 @@ export default function URLReviewAnalyzerModal({
 
   if (!isOpen) return null;
 
-  async function handleAnalyze(targetUrl?: string) {
+  async function handleAnalyze(targetUrl?: string, overrideName?: string) {
     const urlToUse = targetUrl || url;
+    const nameToUse = overrideName !== undefined ? overrideName : customBusinessName;
     const textToUse = pastedText;
 
     if (activeTab === 'url' && !urlToUse.trim()) {
@@ -73,8 +75,8 @@ export default function URLReviewAnalyzerModal({
 
     try {
       const payload = activeTab === 'url'
-        ? { url: urlToUse }
-        : { url: 'Pasted Google Reviews', rawTextContent: textToUse };
+        ? { url: urlToUse, customBusinessName: nameToUse }
+        : { url: 'Pasted Google Reviews', rawTextContent: textToUse, customBusinessName: nameToUse };
 
       const res = await fetch('/api/feedback/scrape-url', {
         method: 'POST',
@@ -100,8 +102,8 @@ export default function URLReviewAnalyzerModal({
     setImporting(true);
     try {
       const payload = activeTab === 'url'
-        ? { url, importToInbox: true }
-        : { url: 'Pasted Google Reviews', rawTextContent: pastedText, importToInbox: true };
+        ? { url, customBusinessName: result.businessName, importToInbox: true }
+        : { url: 'Pasted Google Reviews', rawTextContent: pastedText, customBusinessName: result.businessName, importToInbox: true };
 
       const res = await fetch('/api/feedback/scrape-url', {
         method: 'POST',
@@ -130,8 +132,8 @@ export default function URLReviewAnalyzerModal({
               📍
             </div>
             <div>
-              <h3 className="text-lg font-extrabold text-white">Real Google & Online Review AI Analyzer</h3>
-              <p className="text-xs text-gray-400">Extract & analyze real customer reviews from Google Maps, TripAdvisor, Booking.com, or direct review text.</p>
+              <h3 className="text-lg font-extrabold text-white">Google Reviews & Restaurant/Company AI Analyzer</h3>
+              <p className="text-xs text-gray-400">Analyze real online customer reviews for hotels, restaurants, and companies by Google URL or text.</p>
             </div>
           </div>
           <button onClick={onClose} className="text-gray-400 hover:text-white p-1 text-lg font-bold cursor-pointer">
@@ -163,6 +165,20 @@ export default function URLReviewAnalyzerModal({
           </button>
         </div>
 
+        {/* Common Restaurant / Company Name Optional Input */}
+        <div>
+          <label className="text-xs font-semibold text-gray-300 block mb-1">
+            Restaurant / Hotel / Company Name <span className="text-indigo-400 font-normal">(Optional Override)</span>
+          </label>
+          <input
+            type="text"
+            className="glass-input w-full text-sm"
+            placeholder="e.g. Taj Mahal Palace Hotel / The Capital Grille / Acme SaaS"
+            value={customBusinessName}
+            onChange={(e) => setCustomBusinessName(e.target.value)}
+          />
+        </div>
+
         {/* URL Input Mode */}
         {activeTab === 'url' ? (
           <div className="space-y-3">
@@ -183,11 +199,11 @@ export default function URLReviewAnalyzerModal({
                 {analyzing ? (
                   <>
                     <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                    <span>Scraping Real Data...</span>
+                    <span>Analyzing Reviews...</span>
                   </>
                 ) : (
                   <>
-                    <span>✨ Analyze Real URL</span>
+                    <span>✨ Analyze URL</span>
                   </>
                 )}
               </button>
@@ -195,14 +211,15 @@ export default function URLReviewAnalyzerModal({
 
             {/* Quick Presets */}
             <div className="pt-2">
-              <span className="text-[11px] font-semibold text-gray-400 block mb-1.5">Or test with 1-click review pages:</span>
+              <span className="text-[11px] font-semibold text-gray-400 block mb-1.5">Or test with 1-click sample review pages:</span>
               <div className="flex flex-wrap gap-2">
                 {SAMPLE_URLS.map((s) => (
                   <button
                     key={s.url}
                     onClick={() => {
                       setUrl(s.url);
-                      handleAnalyze(s.url);
+                      setCustomBusinessName(s.name);
+                      handleAnalyze(s.url, s.name);
                     }}
                     className="px-2.5 py-1 rounded-lg text-xs bg-white/5 hover:bg-white/10 text-indigo-300 border border-white/10 transition-all cursor-pointer"
                   >
@@ -219,7 +236,7 @@ export default function URLReviewAnalyzerModal({
             <textarea
               rows={5}
               className="glass-input w-full text-sm font-mono"
-              placeholder="Copy & paste real Google reviews text here e.g.&#10;'Great hotel! Staff was super polite, room was clean, check-in took 5 mins. Highly recommend.'"
+              placeholder="Copy & paste real Google reviews text here e.g.&#10;'Great restaurant! Staff was super polite, food was hot and delicious, check-in took 5 mins. Highly recommend.'"
               value={pastedText}
               onChange={(e) => setPastedText(e.target.value)}
             />
@@ -249,15 +266,17 @@ export default function URLReviewAnalyzerModal({
         {/* AI Real Analysis Result Display */}
         {result && (
           <div className="space-y-6 pt-4 border-t border-white/10 animate-fadeIn">
-            {/* Business / Hotel Summary Header Banner */}
+            {/* Business / Hotel / Restaurant Summary Header Banner */}
             <div className="p-5 rounded-2xl bg-gradient-to-r from-slate-900 via-slate-900 to-indigo-950/80 border border-indigo-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div>
                 <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
-                  {result.businessCategory}
+                  📍 {result.businessCategory}
                 </span>
-                <h4 className="text-xl font-black text-white mt-1">{result.businessName}</h4>
+                <h4 className="text-2xl font-black text-white mt-1 flex items-center gap-2">
+                  <span>{result.businessName}</span>
+                </h4>
                 <p className="text-xs text-gray-400 mt-0.5">
-                  Extracted {result.totalReviewsExtracted} real reviews from payload
+                  Extracted {result.totalReviewsExtracted} real customer reviews
                 </p>
               </div>
 
@@ -280,7 +299,9 @@ export default function URLReviewAnalyzerModal({
 
             {/* Executive Reputation Summary */}
             <div className="p-4 rounded-xl bg-slate-900/90 border border-white/10 space-y-1.5">
-              <h5 className="text-xs font-bold uppercase tracking-wider text-indigo-400">AI Real Reputation Synthesis</h5>
+              <h5 className="text-xs font-bold uppercase tracking-wider text-indigo-400">
+                AI Reputation Synthesis for {result.businessName}
+              </h5>
               <p className="text-xs text-gray-200 leading-relaxed">{result.executiveSummary}</p>
             </div>
 
@@ -288,7 +309,7 @@ export default function URLReviewAnalyzerModal({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 space-y-2">
                 <h5 className="text-xs font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-1">
-                  <span>😊 Top Positive Drivers</span>
+                  <span>😊 Top Positive Drivers ({result.businessName})</span>
                 </h5>
                 <ul className="space-y-1 text-xs text-emerald-200">
                   {result.topPositives.map((pos, i) => (
@@ -318,7 +339,9 @@ export default function URLReviewAnalyzerModal({
             {/* Extracted Real Customer Reviews List */}
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <h5 className="text-xs font-bold uppercase tracking-wider text-gray-400">Extracted Authentic Customer Reviews</h5>
+                <h5 className="text-xs font-bold uppercase tracking-wider text-gray-400">
+                  Extracted Customer Reviews ({result.businessName})
+                </h5>
                 <span className="text-xs text-gray-500">{result.extractedReviews.length} Reviews Parsed</span>
               </div>
 
@@ -372,11 +395,11 @@ export default function URLReviewAnalyzerModal({
                 className="px-6 py-2.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-500/20 disabled:opacity-60 cursor-pointer flex items-center gap-2"
               >
                 {imported ? (
-                  <span>✅ Imported {result.extractedReviews.length} Real Reviews to Inbox!</span>
+                  <span>✅ Imported {result.extractedReviews.length} Reviews for {result.businessName} to Inbox!</span>
                 ) : importing ? (
                   <span>Saving to Database...</span>
                 ) : (
-                  <span>📥 Import Extracted Reviews to Inbox</span>
+                  <span>📥 Import Reviews for {result.businessName} to Inbox</span>
                 )}
               </button>
             </div>
