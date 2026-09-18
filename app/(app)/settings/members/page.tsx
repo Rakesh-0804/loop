@@ -78,6 +78,24 @@ export default function MembersPage() {
     setMembers((prev) => prev.map((m) => (m.id === userId ? { ...m, role: newRole } : m)));
   }
 
+  async function handleRemoveMember(userId: string, memberName: string) {
+    if (!confirm(`Are you sure you want to remove ${memberName} from this workspace?`)) return;
+    setError('');
+    try {
+      const res = await fetch(`/api/members?userId=${userId}`, {
+        method: 'DELETE',
+      });
+      if (res.ok) {
+        setMembers((prev) => prev.filter((m) => m.id !== userId));
+      } else {
+        const data = await res.json();
+        setError(data.error || 'Failed to remove member');
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
   return (
     <div className="p-6 md:p-8 max-w-7xl mx-auto w-full space-y-8 animate-fadeIn">
       {/* Header */}
@@ -209,7 +227,7 @@ export default function MembersPage() {
                         {m.role}
                       </span>
                     </td>
-                    <td className="py-4 px-6 text-right">
+                    <td className="py-4 px-6 text-right flex items-center justify-end gap-3">
                       <select
                         value={m.role}
                         onChange={(e) => updateRole(m.id, e.target.value)}
@@ -219,6 +237,13 @@ export default function MembersPage() {
                         <option value="ANALYST" className="bg-slate-900">Analyst</option>
                         <option value="VIEWER" className="bg-slate-900">Viewer</option>
                       </select>
+                      <button
+                        onClick={() => handleRemoveMember(m.id, m.name)}
+                        className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/30 transition-all cursor-pointer"
+                        title="Remove Member"
+                      >
+                        🗑️ Remove
+                      </button>
                     </td>
                   </tr>
                 ))}

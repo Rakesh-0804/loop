@@ -20,7 +20,7 @@ export async function GET() {
 
   try {
     const members = await prisma.user.findMany({
-      where: { workspaceId },
+      where: workspaceId ? { workspaceId } : {},
       select: { id: true, name: true, email: true, role: true },
     });
 
@@ -120,4 +120,33 @@ export async function PATCH(req: Request) {
     data: { role: parsed.data.role },
   });
   return NextResponse.json(updated);
+}
+
+export async function DELETE(req: Request) {
+  const session = await auth();
+  if (!session?.user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const sessionUser = session.user as { role?: string; workspaceId?: string };
+  if (sessionUser.role !== 'ADMIN') {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  }
+
+  const { searchParams } = new URL(req.url);
+  const userId = searchParams.get('userId');
+
+  if (!userId) {
+    return NextResponse.json({ error: 'Missing userId' }, { status: 400 });
+  }
+
+  try {
+    await prisma.user.delete({
+      where: { id: userId },
+    });
+    return NextResponse.json({ message: 'Member removed successfully' });
+  } catch (e) {
+    console.error('Member delete error:', e);
+    return NextResponse.json({ error: 'Failed to delete member' }, { status: 500 });
+  }
 }
