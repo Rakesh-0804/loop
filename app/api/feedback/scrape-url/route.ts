@@ -17,6 +17,7 @@ export async function POST(req: Request) {
 
     let targetUrl = (url || '').trim();
     let webpagePayload = (rawTextContent || '').trim();
+    let extractedMetaTitle = '';
 
     // If user provided a URL, fetch live real webpage content
     if (targetUrl.startsWith('http')) {
@@ -38,11 +39,20 @@ export async function POST(req: Request) {
 
         const html = await headRes.text();
 
+        // Extract Organization Meta Title or Site Name
+        const titleMatch = html.match(/<title[^>]*>(.*?)<\/title>/i);
+        const ogTitleMatch = html.match(/<meta[^>]*property=["']og:(?:title|site_name)["'][^>]*content=["'](.*?)["']/i);
+        if (ogTitleMatch && ogTitleMatch[1]) {
+          extractedMetaTitle = ogTitleMatch[1].trim();
+        } else if (titleMatch && titleMatch[1]) {
+          extractedMetaTitle = titleMatch[1].replace(/[-|_|:|\bReviews\b].*/i, '').trim();
+        }
+
         // Extract JSON-LD, script blocks, and clean text
         const jsonLdMatches = html.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/gi) || [];
         const jsonLdContent = jsonLdMatches.map((m) => m.replace(/<[^>]+>/g, '')).join('\n');
 
-        // Extract review-like elements or text content
+        // Extract clean text content
         const cleanText = html
           .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, ' ')
           .replace(/<[^>]+>/g, ' ')
@@ -62,12 +72,14 @@ export async function POST(req: Request) {
     // Execute Gemini AI Real Review Analysis
     const analysis = await analyzeURLReviewsAI(targetUrl || 'Google Reviews', webpagePayload);
 
-    // Override businessName if custom name specified by user
+    // Override or refine Organization / Business Name
     if (customBusinessName && typeof customBusinessName === 'string' && customBusinessName.trim().length > 0) {
       analysis.businessName = customBusinessName.trim();
+    } else if (extractedMetaTitle && (analysis.businessName.includes('Google') || analysis.businessName.includes('Reviews'))) {
+      analysis.businessName = extractedMetaTitle;
     }
 
-    // If user requested to import extracted real reviews directly into workspace inbox
+    // If user requested to import extracted real recent reviews directly into workspace inbox
     if (importToInbox && analysis.extractedReviews.length > 0) {
       // Guard workspace exists
       await prisma.workspace.upsert({
@@ -79,9 +91,9 @@ export async function POST(req: Request) {
       for (const item of analysis.extractedReviews) {
         const created = await prisma.feedback.create({
           data: {
-            content: `[${analysis.businessName} Google Review - ${item.rating}★] ${item.content}`,
+            content: `[${analysis.businessName} Online Review - ${item.rating}★] ${item.content}`,
             channel: 'app_store',
-            sourceRef: `Google Reviews: ${analysis.businessName}`,
+            sourceRef: `Online Reviews: ${analysis.businessName}`,
             customerLabel: `${item.author} (${analysis.businessName})`,
             sentiment: item.sentiment,
             sentimentScore: item.sentimentScore,
@@ -89,7 +101,7 @@ export async function POST(req: Request) {
           },
         });
 
-        // Link themes
+        // Link extracted theme categories automatically
         if (item.themes && item.themes.length > 0) {
           for (const tName of item.themes) {
             let themeRecord = await prisma.theme.findFirst({
