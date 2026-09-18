@@ -3,6 +3,56 @@ import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import { analyzeURLReviewsAI } from '@/lib/ai';
 
+function extractOrgNameFromUrl(urlStr: string, htmlText: string = ''): string {
+  try {
+    if (!urlStr.startsWith('http')) return '';
+
+    // 1. Google Maps Place regex: /maps/place/Taj+Mahal+Palace+Mumbai/
+    const mapsPlaceMatch = urlStr.match(/\/maps\/place\/([^/@?]+)/i);
+    if (mapsPlaceMatch && mapsPlaceMatch[1]) {
+      const decoded = decodeURIComponent(mapsPlaceMatch[1]).replace(/\+/g, ' ').trim();
+      if (decoded.length > 2) return decoded;
+    }
+
+    // 2. Google Search query regex: ?q=Taj+Hotel+Mumbai+reviews
+    const searchMatch = urlStr.match(/[?&]q=([^&]+)/i);
+    if (searchMatch && searchMatch[1]) {
+      const decoded = decodeURIComponent(searchMatch[1]).replace(/\+/g, ' ').replace(/\breviews?\b/gi, '').trim();
+      if (decoded.length > 2) return decoded;
+    }
+
+    // 3. TripAdvisor URL regex: Reviews-The_Taj_Mahal_Palace
+    const tripAdvisorMatch = urlStr.match(/Reviews-([^.]+)/i);
+    if (tripAdvisorMatch && tripAdvisorMatch[1]) {
+      const decoded = tripAdvisorMatch[1].replace(/_/g, ' ').trim();
+      if (decoded.length > 2) return decoded;
+    }
+
+    // 4. HTML <title> or og:site_name tag extraction
+    if (htmlText) {
+      const titleMatch = htmlText.match(/<title[^>]*>(.*?)<\/title>/i);
+      const ogTitleMatch = htmlText.match(/<meta[^>]*property=["']og:(?:title|site_name)["'][^>]*content=["'](.*?)["']/i);
+      if (ogTitleMatch && ogTitleMatch[1] && ogTitleMatch[1].trim().length > 2) {
+        return ogTitleMatch[1].trim();
+      }
+      if (titleMatch && titleMatch[1]) {
+        const cleanTitle = titleMatch[1]
+          .replace(/[-|_|:|\bGoogle Maps\b|\bTripadvisor\b|\bBooking\.com\b|\bTrustpilot\b|\bReviews\b].*/gi, '')
+          .trim();
+        if (cleanTitle.length > 2) return cleanTitle;
+      }
+    }
+
+    // 5. Hostname fallback
+    const parsed = new URL(urlStr);
+    const parts = parsed.hostname.replace('www.', '').split('.');
+    const domainName = parts[0];
+    return domainName.charAt(0).toUpperCase() + domainName.slice(1);
+  } catch (e) {
+    return '';
+  }
+}
+
 export async function POST(req: Request) {
   const session = await auth();
   if (!session?.user) {
@@ -17,7 +67,7 @@ export async function POST(req: Request) {
 
     let targetUrl = (url || '').trim();
     let webpagePayload = (rawTextContent || '').trim();
-    let extractedMetaTitle = '';
+    let extractedOrgName = '';
 
     // If user provided a URL, fetch live real webpage content
     if (targetUrl.startsWith('http')) {
@@ -38,15 +88,7 @@ export async function POST(req: Request) {
         }
 
         const html = await headRes.text();
-
-        // Extract Organization Meta Title or Site Name
-        const titleMatch = html.match(/<title[^>]*>(.*?)<\/title>/i);
-        const ogTitleMatch = html.match(/<meta[^>]*property=["']og:(?:title|site_name)["'][^>]*content=["'](.*?)["']/i);
-        if (ogTitleMatch && ogTitleMatch[1]) {
-          extractedMetaTitle = ogTitleMatch[1].trim();
-        } else if (titleMatch && titleMatch[1]) {
-          extractedMetaTitle = titleMatch[1].replace(/[-|_|:|\bReviews\b].*/i, '').trim();
-        }
+        extractedOrgName = extractOrgNameFromUrl(resolvedUrl, html);
 
         // Extract JSON-LD, script blocks, and clean text
         const jsonLdMatches = html.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/gi) || [];
@@ -62,6 +104,7 @@ export async function POST(req: Request) {
         webpagePayload = (jsonLdContent + '\n' + cleanText).slice(0, 20000);
       } catch (e) {
         console.warn('Live fetch note for URL:', targetUrl, e);
+        extractedOrgName = extractOrgNameFromUrl(targetUrl, '');
       }
     }
 
@@ -72,11 +115,11 @@ export async function POST(req: Request) {
     // Execute Gemini AI Real Review Analysis
     const analysis = await analyzeURLReviewsAI(targetUrl || 'Google Reviews', webpagePayload);
 
-    // Override or refine Organization / Business Name
+    // Apply exact extracted Organization Name
     if (customBusinessName && typeof customBusinessName === 'string' && customBusinessName.trim().length > 0) {
       analysis.businessName = customBusinessName.trim();
-    } else if (extractedMetaTitle && (analysis.businessName.includes('Google') || analysis.businessName.includes('Reviews'))) {
-      analysis.businessName = extractedMetaTitle;
+    } else if (extractedOrgName && extractedOrgName.length > 2) {
+      analysis.businessName = extractedOrgName;
     }
 
     // If user requested to import extracted real recent reviews directly into workspace inbox
@@ -91,7 +134,7 @@ export async function POST(req: Request) {
       for (const item of analysis.extractedReviews) {
         const created = await prisma.feedback.create({
           data: {
-            content: `[${analysis.businessName} Online Review - ${item.rating}★] ${item.content}`,
+            content: `[${analysis.businessName} Review - ${item.rating}★] ${item.content}`,
             channel: 'app_store',
             sourceRef: `Online Reviews: ${analysis.businessName}`,
             customerLabel: `${item.author} (${analysis.businessName})`,
