@@ -176,12 +176,6 @@ export default function InboxPage() {
             <span>Clear All Data</span>
           </button>
           <button
-            onClick={() => setShowURLModal(true)}
-            className="px-4 py-2.5 rounded-xl text-sm font-semibold bg-gradient-to-r from-cyan-600 to-indigo-600 hover:from-cyan-500 hover:to-indigo-500 text-white shadow-md shadow-cyan-500/20 transition-all flex items-center gap-2 cursor-pointer"
-          >
-            <span>🌐 Analyze Review URL</span>
-          </button>
-          <button
             onClick={() => setShowCSVModal(true)}
             className="px-4 py-2.5 rounded-xl text-sm font-semibold bg-slate-800 hover:bg-slate-700 text-white border border-white/10 shadow-md transition-all flex items-center gap-2 cursor-pointer"
           >

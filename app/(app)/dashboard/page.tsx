@@ -110,12 +110,6 @@ export default function DashboardPage() {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <button
-            onClick={() => setShowURLModal(true)}
-            className="px-4 py-2.5 rounded-xl text-sm font-bold bg-gradient-to-r from-cyan-600 to-indigo-600 hover:from-cyan-500 hover:to-indigo-500 text-white shadow-md shadow-cyan-500/20 transition-all flex items-center gap-2 cursor-pointer"
-          >
-            <span>🌐 Analyze Review URL</span>
-          </button>
           <Link
             href="/inbox"
             className="px-4 py-2.5 rounded-xl text-sm font-semibold bg-indigo-600 hover:bg-indigo-500 text-white shadow-md shadow-indigo-500/20 transition-all flex items-center gap-2"
